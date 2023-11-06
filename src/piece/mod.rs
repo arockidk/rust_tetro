@@ -10,11 +10,11 @@ pub enum PieceColor {
 
 struct Piece {
     color: PieceColor,
-    positions: [(usize,usize)]
+    positions: [(usize,usize); 4]
 }
 
 impl Piece {
-    pub fn new(color: PieceColor, positions: [(usize,usize)]) -> Piece{
+    pub fn new(color: PieceColor, positions: [(usize,usize); 4]) -> Piece{
         let piece = Piece {
             color: color,
             positions: positions
