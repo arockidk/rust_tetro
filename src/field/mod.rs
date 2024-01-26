@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use crate::piece::{self, RotationState};
-
+use crate::kicks;
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
@@ -55,7 +55,7 @@ impl Field {
         return self.active_piece;
     }
     pub fn can_place_active_piece(self: &Field) -> bool { 
-        
+        false
     }
     pub fn rotate_active_piece(self: &mut Field, state: RotationState) {
         match self.active_piece { 
@@ -69,7 +69,7 @@ impl Field {
                         // CW
                         match piece.rotation {
                             RotationState::North => {
-                                
+                              
                             },
                             RotationState::East => todo!(),
                             RotationState::South => todo!(),
