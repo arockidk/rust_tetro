@@ -6,6 +6,8 @@ mod fumen;
 mod queue;
 mod math;
 mod kicks;
+mod board;
+mod vec2;
 #[cfg(test)]
 mod tests {
     use crate::field;

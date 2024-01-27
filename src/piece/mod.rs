@@ -3,6 +3,8 @@ use std::{sync::Mutex, ops::Sub};
 extern crate once_cell;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
+
+use crate::vec2::Vec2;
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum PieceColor {
 
@@ -52,8 +54,20 @@ impl Sub for RotationState {
         self - rhs
     }
 }
+impl Add for RotationState { 
+    type Output = i64;
+    fn add(self, rhs: Self) -> Self::Output {
+        self + rhs
+    }
+}
+impl Add<i8> for RotationState { 
+    type Output = i8;
+    fn add(self, rhs: i8) -> Self::Output {
+        self + rhs
+    }
+}
 impl RotationState {
-    pub fn from_int(int: i32) -> RotationState {
+    pub fn from_int(int: i64) -> RotationState {
         match int {
             0 => RotationState::North,
             1 => RotationState::East,
@@ -69,10 +83,7 @@ pub struct Block {
     positions: [(i32,i32); 4]
 }
 
-static BLOCKS: Lazy<Mutex<HashMap<PieceColor,Block>>> = Lazy::new(|| {
-
-    Mutex::new(HashMap::new())
-});
+const static BLOCKS: [Vec2
 fn set_block(color: &PieceColor, value: Block) { 
     BLOCKS.lock().unwrap().insert(*color, value);
 }
