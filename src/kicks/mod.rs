@@ -6,49 +6,49 @@ pub type KickData180 = [[Vec2; 2]; 4];
 // kicks taken from jan_ewan's stackfish because i cant find kicktables for jstris 180
 // Kicks, comprised of 2-tuples
 const KICKS: [[Vec2; 5]; 4] = [
-    [(0,0); 5],
-    [( 0, 0), ( 1, 0), ( 1,-1), ( 0, 2), ( 1, 2)],
+    [Vec2(0,0); 5],
+    [Vec2( 0, 0), Vec2( 1, 0), Vec2( 1,-1), Vec2( 0, 2), Vec2( 1, 2)],
     
-    [(0,0); 5 ],
-    [( 0, 0), (-1, 0), (-1,-1), ( 0, 2), (-1, 2)],
+    [Vec2(0,0); 5 ],
+    [Vec2( 0, 0), Vec2(-1, 0), Vec2(-1,-1), Vec2( 0, 2), Vec2(-1, 2)],
 ];
 
 const I_KICKS: [[Vec2; 5]; 4] = [
-    [( 0, 0), (-1, 0), ( 2, 0), (-1, 0), ( 2, 0)],
-    [(-1, 0), ( 0, 0), ( 0, 0),  (0, 1), ( 0,-2)],
-    [(-1, 1), ( 1, 1), (-2, 1), ( 1, 0), (-2, 0)],
-    [( 0, 1), ( 0, 1), ( 0, 1), ( 0,-1), ( 0, 2)],
+    [Vec2( 0, 0), Vec2(-1, 0), Vec2( 2, 0), Vec2(-1, 0), Vec2( 2, 0)],
+    [Vec2(-1, 0), Vec2( 0, 0), Vec2( 0, 0),  Vec2(0, 1), Vec2( 0,-2)],
+    [Vec2(-1, 1), Vec2( 1, 1), Vec2(-2, 1), Vec2( 1, 0), Vec2(-2, 0)],
+    [Vec2( 0, 1), Vec2( 0, 1), Vec2( 0, 1), Vec2( 0,-1), Vec2( 0, 2)],
 ];
 
 const O_KICKS: [[Vec2; 5]; 4] = [
-    [( 0, 0 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 )],
-    [( 0,-1 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 )],
-    [(-1, 0 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 )],
-    [(-1,-1 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 ), ( 0, 0 )]
+    [Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 )],
+    [Vec2( 0,-1 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 )],
+    [Vec2(-1, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 )],
+    [Vec2(-1,-1 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 ), Vec2( 0, 0 )]
 ];
 
 const KICKS_180: [[Vec2; 2]; 4] = [
-    [( 0, 0), ( 0, 1)],
-    [( 0, 0), ( 1, 0)],
-    [( 0, 0); 2],
-    [( 0, 0); 2],
+    [Vec2( 0, 0), Vec2( 0, 1)],
+    [Vec2( 0, 0), Vec2( 1, 0)],
+    [Vec2( 0, 0); 2],
+    [Vec2( 0, 0); 2],
 ];
 
 const I_KICKS_180: [[Vec2; 2]; 4] = [
-    [( 1,-1), ( 1, 0)],
-    [(-1,-1), ( 0, -1)],
-    [( 0, 0); 2],
-    [( 0, 0); 2],
+    [Vec2( 1,-1), Vec2( 1, 0)],
+    [Vec2(-1,-1), Vec2( 0, -1)],
+    [Vec2( 0, 0); 2],
+    [Vec2( 0, 0); 2],
 ];
 
 const O_KICKS_180: [[Vec2; 2]; 4] = [
-    [( 1, 1), ( 0, 0 )],
-    [( 1,-1), ( 0, 0 )],
-    [( 0, 0), ( 0, 0 )],
-    [( 0, 0), ( 0, 0 )],
+    [Vec2( 1, 1), Vec2( 0, 0 )],
+    [Vec2( 1,-1), Vec2( 0, 0 )],
+    [Vec2( 0, 0), Vec2( 0, 0 )],
+    [Vec2( 0, 0), Vec2( 0, 0 )],
 ];
 
-pub fn get_kicks(piece: Piece) -> KickData {
+pub fn get_kicksVec2(piece: Piece) -> KickData {
     match piece.color {
         PieceColor::I => I_KICKS,
         PieceColor::O => O_KICKS,
@@ -56,7 +56,7 @@ pub fn get_kicks(piece: Piece) -> KickData {
         
     }
 }
-pub fn get_180_kicks(piece: Piece) -> KickData180 { 
+pub fn get_180_kicksVec2(piece: Piece) -> KickData180 { 
     match piece.color { 
         PieceColor::I => I_KICKS_180,
         PieceColor::O => O_KICKS_180,

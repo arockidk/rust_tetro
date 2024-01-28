@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use std::{ops::Sub};
+use std::{ops::{Add, Sub}};
 use crate::vec2::Vec2;
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum PieceColor {
@@ -130,11 +130,11 @@ static BLOCKS: [[Vec2; 4]; 7] = [
 pub struct Piece {
     pub color: PieceColor,
     pub rotation: RotationState,
-    pub position: (usize, usize)
+    pub position: Vec2
 }
 
 impl Piece {
-    pub fn new(color: PieceColor, rotation: RotationState, position: (usize, usize)) -> Piece {
+    pub fn new(color: PieceColor, rotation: RotationState, position: Vec2) -> Piece {
         let piece = Piece {
             color: color,
             rotation: rotation,
@@ -143,23 +143,31 @@ impl Piece {
         };
         return piece;
     }
-    pub fn get_minos(&self) {
-        let base: [Vec2; 4] = BLOCKS[self.color - 1];
-        let rotated: [Vec2; 4] = [(0,0); ];
-        // apply rotation
-        match self.rotation { 
-            RotationState::East => {
-                for mino in base {
+    pub fn get_minos(self: &Piece) {
+        let mut minos: [Vec2; 4] = BLOCKS[self.color as usize - 1];
+        for mut mino in &minos {
+            let temp = mino.0;
+            match self.rotation { 
+                RotationState::North => {}
+                RotationState::East => {
+                    mino.0 = mino.1;
+                    mino.1 = -temp;
                 }
-
-            }
-            RotationState::South => {
-                
-            }
-            RotationState::West => {
-                
-            }
+                RotationState::South => {
+                    mino.0 *= -1;
+                    mino.1 *= -1;
+                }
+                RotationState::West => {
+                    mino.0 = -mino.1;
+                    mino.1 = temp;
+                }
+            } 
         }
+        for mut mino in &minos {
+            mino.0 += self.position.0;
+            mino.1 += self.position.1;
+        } 
+    }
 }
 
 pub fn get_pieces() -> [PieceColor; 7] {

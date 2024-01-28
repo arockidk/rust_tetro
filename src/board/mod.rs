@@ -1,3 +1,4 @@
+use crate::piece::RotationState;
 use crate::{kicks::get_180_kicks, piece::Piece};
 use crate::vec2::Vec2;
 pub struct Board {
@@ -43,19 +44,19 @@ impl Board {
         return Board::from_int_array(tiles);
     }
     pub fn does_collide(self: &Board, piece: &Piece) -> bool {
-        
+        false
     }
-    pub fn rotate_piece(self: &mut Field, piece: &mut Piece, rotation: i8) {
-        let test_piece = piece.clone();
+    pub fn rotate_piece(self: &mut Board , piece: &mut Piece, rotation: i8) {
+        let mut test_piece = piece.clone();
         let mod_rot = rotation % 4;
-        let old_rot: i8 = piece.rotation;
-        let new_rot: i8 = (piece.rotation + mod_rot ) % 4;
-        test_piece.rotation = new_rot;
+        let old_rot: usize = piece.rotation as usize;
+        let new_rot = ((piece.rotation + mod_rot ) % 4);
+        test_piece.rotation = RotationState::from_int(new_rot.into());
         if (mod_rot == 2) {
             // 180 rotation
-            let kicks = get_180_kicks(piece);
+            let kicks = get_180_kicks(*piece);
             for i in 0..2 { 
-                let shift: Vec2 = kicks[old_rot][i] - kicks[new_rot][i];
+                let shift: Vec2 = kicks[old_rot][i] - kicks[new_rot as usize][i];
             }
         }
         

@@ -1,4 +1,4 @@
-use crate::field::Field;
+use crate::{board::Board, field::Field};
 use wasm_bindgen::prelude::*;
 pub struct Page {
     comment: String,
@@ -18,7 +18,7 @@ fn b64_encode(v: i64) -> String {
     
 }
 #[wasm_bindgen]
-pub fn encode_fumen(field: &Field) -> String {
+pub fn encode_fumen(field: &Board) -> String {
     let mut base: String = String::from("v115@");
     let mut count: i64 = 0;
     let mut previous_tile: i8 = field.get_tile(0,0);
