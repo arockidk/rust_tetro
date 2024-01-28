@@ -1,9 +1,5 @@
 use wasm_bindgen::prelude::*;
-use std::{sync::Mutex, ops::Sub};
-extern crate once_cell;
-use once_cell::sync::Lazy;
-use std::collections::HashMap;
-
+use std::{ops::Sub};
 use crate::vec2::Vec2;
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum PieceColor {
@@ -77,71 +73,59 @@ impl RotationState {
         }
     }
 }
-#[derive(Clone, Copy)]
-pub struct Block {
-    color: PieceColor,
-    positions: [(i32,i32); 4]
-}
 
-const static BLOCKS: [Vec2
-fn set_block(color: &PieceColor, value: Block) { 
-    BLOCKS.lock().unwrap().insert(*color, value);
-}
-pub fn get_block(color: PieceColor) -> Block {
-   
-    if BLOCKS.lock().unwrap().keys().any(|&clr| clr == color) {
-        match color {
-            PieceColor::T => {
-                set_block(&color, Block {
-                    color: PieceColor::T,
-                    positions: [(0,0),(-1,0),(1,0),(0,1)]
-                }) 
-            },
-            PieceColor::I => {
-                set_block(&color, Block {
-                    color: PieceColor::I,
-                    positions: [(0,0),(-1,0),(1,0),(2,0)]
-                }) ;
-            },
-            PieceColor::L => {
-                set_block(&color, Block {
-                    color: PieceColor::L,
-                    positions: [(0,0),(-1,0),(1,0),(1,1)]
-                });
 
-            },
-            PieceColor::J => {
-                set_block(&color, Block {
-                    color: PieceColor::J,
-                    positions: [(0,0),(-1,0),(1,0),(-1,1)]
-                }) 
 
-            },
-            PieceColor::S => {
-                set_block(&color, Block {
-                    color: PieceColor::S,
-                    positions: [(0,0),(-1,0),(0,1),(1,1)]
-                });
+static BLOCKS: [[Vec2; 4]; 7] = [
+    // I
+    [
 
-                
-            },
-            PieceColor::Z => {
-                set_block(&color, Block {
-                    color: PieceColor::Z,
-                    positions: [(0,0),(1,0),(0,1),(-1,1)]
-                });
+        Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), Vec2( 2, 0)
 
-            },
-            PieceColor::O => {
-                set_block(&color, Block {
-                    color: PieceColor::O,
-                    positions: [(0,0),(1,0),(0,1),(1,1)]
-                });
-            },
-        }
-    }
-    return BLOCKS.lock().unwrap()[&color];
-}
+
+    ],
+    // L
+    [
+                                  Vec2( 1,-1),
+        Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
+        
+    ],
+    // O
+    [
+                     Vec2( 0,-1), Vec2( 1,-1),
+                     Vec2( 0, 0), Vec2( 1, 0),  
+
+
+    ],
+    // Z
+    [
+        Vec2(-1,-1), Vec2( 0,-1),
+                     Vec2( 0, 0), Vec2( 1, 0), 
+        
+    ],
+    // T
+    [
+                     Vec2( 0,-1),
+        Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
+        
+    ],
+    // J
+    [
+        Vec2(-1,-1),
+        Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
+        
+    ],
+    
+    // S
+    [
+                     Vec2( 0,-1), Vec2( 1,-1), 
+        Vec2(-1, 0), Vec2( 0, 0),
+                                            
+    ],
+    
+
+];
+
 #[derive(Clone, Copy)]
 pub struct Piece {
     pub color: PieceColor,
@@ -159,6 +143,23 @@ impl Piece {
         };
         return piece;
     }
+    pub fn get_minos(&self) {
+        let base: [Vec2; 4] = BLOCKS[self.color - 1];
+        let rotated: [Vec2; 4] = [(0,0); ];
+        // apply rotation
+        match self.rotation { 
+            RotationState::East => {
+                for mino in base {
+                }
+
+            }
+            RotationState::South => {
+                
+            }
+            RotationState::West => {
+                
+            }
+        }
 }
 
 pub fn get_pieces() -> [PieceColor; 7] {
