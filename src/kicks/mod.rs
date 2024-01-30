@@ -48,18 +48,18 @@ const O_KICKS_180: [[Vec2; 2]; 4] = [
     [Vec2( 0, 0), Vec2( 0, 0 )],
 ];
 
-pub fn get_kicksVec2(piece: Piece) -> KickData {
+pub fn get_kicks(piece: Piece) -> KickData {
     match piece.color {
         PieceColor::I => I_KICKS,
         PieceColor::O => O_KICKS,
-        default => KICKS
+        _default => KICKS
         
     }
 }
-pub fn get_180_kicksVec2(piece: Piece) -> KickData180 { 
+pub fn get_180_kicks(piece: Piece) -> KickData180 { 
     match piece.color { 
         PieceColor::I => I_KICKS_180,
         PieceColor::O => O_KICKS_180,
-        default => KICKS_180
+        _default => KICKS_180
     }
 }

@@ -1,3 +1,4 @@
+
 use crate::{board::Board, field::Field};
 use wasm_bindgen::prelude::*;
 pub struct Page {
