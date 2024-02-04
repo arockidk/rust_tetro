@@ -3,6 +3,8 @@ use wasm_bindgen::prelude::*;
 use core::fmt;
 use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
+
+#[wasm_bindgen]
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum PieceColor {
     B=0,
@@ -44,52 +46,54 @@ impl PieceColor {
         format!("{}{}{}", get_piece_color(*self), str, get_blank())
     }   
 }
+#[wasm_bindgen]
 #[derive(PartialEq, Eq, Clone, Copy)]
-pub enum RotationState {
+pub enum Direction {
     North = 0,
     East = 1,
     South = 2,
     West = 3
 }
-impl RotationState {
+
+impl Direction {
     pub fn to_i8(&self) -> i8 {
         match self {
-            RotationState::North => 0,
-            RotationState::East => 1,
-            RotationState::South => 2,
-            RotationState::West => 3
+         Direction::North => 0,
+         Direction::East => 1,
+         Direction::South => 2,
+         Direction::West => 3
         }
     }
     pub fn to_i64(&self) -> i64 {
         self.to_i8() as i64        
     }
 }
-impl Sub for RotationState { 
+impl Sub for Direction { 
     type Output = i64;
     fn sub(self, rhs: Self) -> Self::Output {
         self.to_i64() - rhs.to_i64()
     }
 }
-impl Add for RotationState { 
+impl Add for Direction { 
     type Output = i64;
     fn add(self, rhs: Self) -> Self::Output {
         self.to_i64() + rhs.to_i64()
     }
 }
-impl Add<i8> for RotationState { 
+impl Add<i8> for Direction { 
     type Output = i8;
     fn add(self, rhs: i8) -> Self::Output {
         self.to_i8() + rhs
     }
 }
-impl RotationState {
-    pub fn from_int(int: i64) -> RotationState {
+impl Direction {
+    pub fn from_int(int: i64) -> Direction {
         match int {
-            0 => RotationState::North,
-            1 => RotationState::East,
-            2 => RotationState::South,
-            3 => RotationState::West,
-            _ => RotationState::North
+            0 => Direction::North,
+            1 => Direction::East,
+            2 => Direction::South,
+            3 => Direction::West,
+            _ => Direction::North
         }
     }
 }
@@ -147,9 +151,10 @@ static BLOCKS: [[Vec2; 4]; 7] = [
 ];
 
 #[derive(Clone, Copy)]
+#[wasm_bindgen]
 pub struct Piece {
     pub color: PieceColor,
-    pub rotation: RotationState,
+    pub rotation: Direction,
     pub position: Vec2
 }
 impl fmt::Display for Piece { 
@@ -183,7 +188,7 @@ impl fmt::Display for Piece {
     }
 }
 impl Piece {
-    pub fn new(color: PieceColor, rotation: RotationState, position: Vec2) -> Piece {
+    pub fn new(color: PieceColor, rotation: Direction, position: Vec2) -> Piece {
         let piece = Piece {
             color: color,
             rotation: rotation,
@@ -192,27 +197,31 @@ impl Piece {
         };
         return piece;
     }
-    pub fn get_minos(self: &Piece) -> [Vec2; 4] {
+    pub fn get_raw_minos(&self) -> [Vec2; 4] {
         let mut minos: [Vec2; 4] = BLOCKS[self.color as usize - 1];
         for i in 0..4 {
             let mino = &mut minos[i as usize];
             let temp = mino.0;
             match self.rotation { 
-                RotationState::North => {}
-                RotationState::East => {
+             Direction::North => {}
+             Direction::East => {
                     mino.0 = mino.1;
                     mino.1 = -temp;
                 }
-                RotationState::South => {
+             Direction::South => {
                     mino.0 *= -1;
                     mino.1 *= -1;
                 }
-                RotationState::West => {
+             Direction::West => {
                     mino.0 = -mino.1;
                     mino.1 = temp;
                 }
             } 
         }
+        return minos;
+    }
+    pub fn get_minos(self: &Piece) -> [Vec2; 4] {
+        let mut minos = self.get_raw_minos();
         // println!("{:?}", minos);
         for mino in &mut minos {
             mino.0 += self.position.0;

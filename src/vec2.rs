@@ -1,4 +1,8 @@
 use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
+
+use wasm_bindgen::prelude::wasm_bindgen;
+
+#[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, Debug, Eq)]
 pub struct Vec2(pub i64, pub i64);
 impl Add<Vec2> for Vec2 { 
