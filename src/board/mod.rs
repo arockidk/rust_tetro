@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 use std::fmt::{Display, Write};
 use crate::colors::get_piece_color;
+use crate::field;
 use crate::kicks::get_kicks;
 use crate::piece::{PieceColor, Direction};
 use crate::{kicks::get_180_kicks, piece::Piece};
@@ -30,6 +31,7 @@ impl Board {
     }
     pub fn get_tile(self: &Board, x: usize, y: usize) -> i8 {
         let pos = Vec2(x.try_into().unwrap(), y.try_into().unwrap());
+        // print!("{:?}", pos);
         if self.in_bounds(pos) {
             return self.tiles[y * 10 + x];
         } else {
@@ -59,9 +61,20 @@ impl Board {
         return Board::from_int_array(tiles);
     }
     pub fn does_collide(self: &Board, piece: &Piece) -> bool {
-        let minos = piece.get_minos();
+        let mut minos = piece.get_raw_minos();
+        // println!("{:?}", piece.position);
+        // println!("{:?}", minos.map(|
+        //     mino| Vec2(
+        //         mino.0 + piece.position.0,
+        //         mino.1 + piece.position.1
+        //     )
+        // ) );
+        minos = minos.map(
+            | mino | Vec2(mino.0 + piece.position.0, (23 - piece.position.1) - mino.1)
+        );
+        // println!("NEW DAS") ;
         for mut mino_pos in minos {
-            mino_pos.1 = 23 - mino_pos.1;
+          
             if !self.in_bounds(mino_pos) {
                 return true;
             }
@@ -90,7 +103,7 @@ impl Board {
             // 180 rotation
             let kicks = get_180_kicks(*piece);
             let mut passed_tests = true;
-            for i in 0..kicks.len() { 
+            for i in 0..2 { 
                 let shift: Vec2 = kicks[old_rot][i] - kicks[new_rot as usize][i];
                 test_piece.position += shift;
                 if self.does_collide(&test_piece) {
@@ -105,12 +118,23 @@ impl Board {
             
         } else  {
             let kicks = get_kicks(*piece);
-            
+            // println!("Starting kicks, start rotation: {}, new rotation: {}", old_rot, new_rot);
+            // println!("Raw minos of new rotation vs old: {:?} {:?}", test_piece.get_raw_minos(), piece.get_raw_minos());
+            // println!("Actual minos of new rotation vs old: {:?} {:?}", test_piece.get_minos(), piece.get_minos());
+            // println!("Applied minos for new rotation\n{}", field::Field::new(*self, test_piece));
             let mut passed_tests = true;
             for i in 0..5 { 
+                let old_offset = kicks[old_rot][i];
+                let new_offset = kicks[new_rot as usize][i];
+                
                 let shift: Vec2 = kicks[old_rot][i] - kicks[new_rot as usize][i];
                 test_piece.position += shift;
-
+                
+                // print!("===========NEW ROT===========\n");
+                // println!("Old offset: {:?}, New offset: {:?}", old_offset, new_offset);
+                // println!("Attempting to rotate with offset {:?}", shift);
+                // println!("{:?}", Vec2(10,23) - test_piece.position);
+                // println!("{}", field::Field::new(*self, test_piece));
                 if self.does_collide(&test_piece) {
                     test_piece.position -= shift;
                     passed_tests = false;
@@ -148,11 +172,12 @@ impl Board {
             }
             Direction::South => {
                 for i in 0..23 {
-                    piece.position -= Vec2(0, 1);
                     if self.does_collide(&piece) {
+                        
                         piece.position += Vec2(0, 1);
                         break;
                     }
+                    piece.position -= Vec2(0, 1);
                 }
             }
             _ => {}

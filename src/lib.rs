@@ -9,6 +9,7 @@ mod kicks;
 mod board;
 mod vec2;
 mod colors;
+mod tetra;
 #[cfg(test)]
 mod tests {
     use crate::field;
@@ -84,6 +85,16 @@ mod tests {
         assert_eq!(board.does_collide(&p), true);
     }
     #[test]
+    fn das_test() {
+        let mut i = piece::Piece::new(PieceColor::I, Direction::North, Vec2(4,20));
+        let mut f = field::Field::new(board::Board::new(), i);
+        f.das_piece(Direction::East);
+        f.das_piece(Direction::South);
+        print!("{}", f);
+        f.rotate_piece(1);
+        print!("{}", f);
+    }
+    #[test]
     fn rotation_test () {
         let s = piece::Piece::new(PieceColor::S, Direction::North, Vec2(4,20));
         let mut standard_s_kick = field::Field::new(board::Board::from_4h_array([
@@ -97,7 +108,7 @@ mod tests {
        standard_s_kick.das_piece(Direction::South);
     //    print!("{:?}", standard_s_kick.active_piece.position);
     //    print!("{}", standard_s_kick);
-       standard_s_kick.active_piece.position += Vec2(1,0);
+    //    standard_s_kick.active_piece.position += Vec2(1,0);
        print!("{}", standard_s_kick);
        standard_s_kick.rotate_piece(1);
        print!("{}", standard_s_kick);

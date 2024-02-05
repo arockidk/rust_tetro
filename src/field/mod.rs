@@ -34,11 +34,12 @@ impl Field {
 impl fmt::Display for Field { 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
         let mut piece_minos = self.active_piece.get_raw_minos();
-        
-        piece_minos = piece_minos.map(
-            | mino | Vec2(mino.0 + self.active_piece.position.0, (24 - self.active_piece.position.1) + mino.1)
-        );
+        // println!("Field display, active piece: {:?}", self.active_piece.position);
         // println!("{:?}", piece_minos);
+        // println!("{:?}", self.active_piece.get_minos());
+        piece_minos = piece_minos.map(
+            | mino | Vec2(mino.0 + self.active_piece.position.0, (23 - self.active_piece.position.1) - mino.1)
+        );
         for i in 0..24 {
             // print!("{} {}", 23 - i, i);
             for j in 0..10 {
