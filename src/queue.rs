@@ -1,15 +1,18 @@
 #![allow(unused_must_use)]
+use wasm_bindgen::prelude::*;
+
 use crate::piece::PieceColor;
 use core::fmt;
 use std::fmt::Write;
+
 #[derive(Clone)]
+#[wasm_bindgen()]
 pub struct Queue {
     pieces: Vec<PieceColor>
 }
 impl Queue {
     pub fn push(&mut self, color: PieceColor) {
         self.pieces.push(color);
-
     }
     pub fn pop(&mut self) -> Option<PieceColor> { 
         self.pieces.pop()

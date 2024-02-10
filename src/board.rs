@@ -45,6 +45,15 @@ impl Board {
     pub fn get_tile_array(self: &Board) -> [i8; 240] {
         return self.tiles;
     }
+    pub fn get_tile_matrix(self: &Board) -> [[i8; 10]; 24] {
+        let mut matrix: [[i8; 10]; 24] = [[0; 10]; 24];
+        for y in 0..24 {
+            for x in 0..10 {
+                matrix[y][x] = self.get_tile(x, y);
+            }
+        }
+        return matrix;
+    }
     pub fn from_int_array(arr: [i8; 240]) -> Board {
         let new_board = Board { 
         
@@ -91,7 +100,7 @@ impl Board {
 
     }
     pub fn in_bounds(&self, pos: Vec2) -> bool { 
-        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 23
+        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24
     }
     pub fn rotate_piece(self: &mut Board , piece: &mut Piece, rotation: i8) -> bool {
         let mut test_piece = piece.clone();
@@ -184,6 +193,7 @@ impl Board {
         }
         
     }
+    
 }
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

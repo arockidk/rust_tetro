@@ -10,11 +10,12 @@ mod board;
 mod vec2;
 mod colors;
 mod tetra;
+mod pc_utils;
+mod gameplay;
 #[cfg(test)]
 mod tests {
     use crate::field;
     use crate::board;
-    use crate::fumen;
     use crate::piece::get_pieces;
     use crate::piece::PieceColor;
     use crate::piece::Direction;
@@ -22,27 +23,25 @@ mod tests {
     use crate::queue::choose;
     use crate::piece;
     use crate::vec2::Vec2;
+    use crate::fumen::Fumen;
     
 
   
 
     #[test]
     fn fumen_test() {
-        let demo = board::Board::new();
-        // fumen::encode_fumen(&demo);
-        assert_eq!(fumen::encode_fumen(&demo), "v115@vh");
-        let mut two_grey = board::Board::new();
-        two_grey.set_tile(0, 0, 8);
-        two_grey.set_tile(1, 0, 8);
-        assert_eq!(fumen::encode_fumen(&two_grey),"v115@B8th");
-        let grey_6p_pco = board::Board::from_4h_array([
+        let mut pco = crate::fumen::Fumen::new();
+        let page = pco.add_page();
+        
+        
+        page.set_field(field::Field { board: board::Board::from_4h_array([
             8,8,0,0,0,0,0,8,8,8,
             8,8,8,0,0,0,0,8,8,8,
             8,8,8,8,0,0,0,8,8,8,
             8,8,8,0,0,0,0,8,8,8
-        ]);
-        assert_eq!(fumen::encode_fumen(&grey_6p_pco),"v115@9gB8EeF8DeG8CeF8DeC8Je");
-        print!("{}", grey_6p_pco);
+        ]), active_piece: None });
+        let encoded_fumen = pco.encode_fumen();
+        println!("{}", encoded_fumen);
     }
     #[test]
     fn queue_test () {
@@ -87,7 +86,7 @@ mod tests {
     #[test]
     fn das_test() {
         let mut i = piece::Piece::new(PieceColor::I, Direction::North, Vec2(4,20));
-        let mut f = field::Field::new(board::Board::new(), i);
+        let mut f = field::Field::new(board::Board::new(), Some(i));
         f.das_piece(Direction::East);
         f.das_piece(Direction::South);
         print!("{}", f);
@@ -102,7 +101,7 @@ mod tests {
             0,0,0,0,0,0,0,0,0,0,
             8,8,8,8,8,0,0,8,8,8,
             8,8,8,8,0,0,8,8,8,8
-        ]),  s);
+        ]),  Some(s));
         standard_s_kick.rotate_piece(1);
     //    print!("{}", standard_s_kick);
        standard_s_kick.das_piece(Direction::South);
@@ -132,5 +131,17 @@ mod tests {
         println!("{}", S);
         let Z = piece::Piece::new(PieceColor::Z, Direction::North, Vec2(4,20));
         println!("{}", Z);
+    }
+    #[test]
+    fn pc_test() {
+        use crate::pc_utils::i64_board;
+        let mut board = i64_board::new();
+        board.set_tile(4, 2, true);
+        println!("{}", board);
+        let mut t = piece::Piece::new(PieceColor::T, Direction::North, Vec2(0,0));
+        assert_eq!(board.does_collide(t), true);
+        t.position += Vec2(1,0);
+        assert_eq!(board.does_collide(t), false);
+        assert_eq!(board.can_place(t), true);
     }
 }

@@ -1,11 +1,13 @@
 
+use js_sys::Number;
 use wasm_bindgen::prelude::*;
 use core::fmt;
 use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
-
+use tsify::Tsify;
 #[wasm_bindgen]
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Tsify)]
+
 pub enum PieceColor {
     B=0,
     I=1,
@@ -16,7 +18,11 @@ pub enum PieceColor {
     J=6,
     S=7
 }
+
 impl PieceColor {
+    pub fn from_js_value(v: JsValue) -> PieceColor {
+        Self::from_int(v.as_f64().unwrap() as i8)
+    }
     pub fn from_int(int: i8) -> PieceColor {
         match int {
             0 => PieceColor::B,
@@ -28,6 +34,19 @@ impl PieceColor {
             6 => PieceColor::J,
             7 => PieceColor::S,
             _ => PieceColor::T
+        }
+    }
+    pub fn to_number(&self) -> Number {
+        match self {
+            PieceColor::B => Number::from(0),
+            PieceColor::I => Number::from(1),
+            PieceColor::L => Number::from(2),
+            PieceColor::O => Number::from(3),
+            PieceColor::Z => Number::from(4),
+            PieceColor::T => Number::from(5),
+            PieceColor::J => Number::from(6),
+            PieceColor::S => Number::from(7)
+            
         }
     }
     pub fn to_char(&self) -> char {
