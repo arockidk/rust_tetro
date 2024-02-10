@@ -1,19 +1,19 @@
 #![allow(dead_code)]
 #![allow(unused)]
-mod field;
-mod piece;
-mod fumen;
-mod queue;
-mod math;
-mod kicks;
-mod board;
-mod vec2;
-mod colors;
-mod tetra;
-mod pc_utils;
-mod gameplay;
+pub mod field;
+pub mod piece;
+pub mod fumen;
+pub mod queue;
+pub mod math;
+pub mod kicks;
+pub mod board;
+pub mod vec2;
+pub mod colors;
+pub mod tetra;
+pub mod pc_utils;
+pub mod gameplay;
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use crate::field;
     use crate::board;
     use crate::piece::get_pieces;
