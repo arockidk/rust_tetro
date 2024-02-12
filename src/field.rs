@@ -2,19 +2,19 @@ use fumen;
 use std::fmt::{self, Write};
 
 use wasm_bindgen::prelude::*;
-use crate::{board::Board, piece::{self, Direction, Piece, PieceColor}, vec2::Vec2};
+use crate::{board::Board, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, Piece, PieceColor, PieceMinos}, vec2::Vec2};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
+
 pub struct Field {
     pub board: Board,
     pub active_piece: Option<Piece>
 
 }
 
-/**
- * active_piece can simply be any piece, set color to 0 to represent nothing
- */
+
+#[wasm_bindgen]
 impl Field {
     pub fn new(board: Board, active_piece: Option<Piece>) -> Field {
         Field {board: board, active_piece: active_piece}
@@ -22,7 +22,12 @@ impl Field {
     }
 
     pub fn can_place_active_piece(self: &Field) -> bool { 
-        false
+        match self.active_piece {
+            Some(mut p) => {
+                self.board.can_place(p)
+            }
+            None => false
+        }
     }
     pub fn das_piece(&mut self, direction: Direction){
         match self.active_piece {
@@ -34,7 +39,7 @@ impl Field {
         
         // print!("{:?}", self.active_piece.position);
     }
-    pub fn rotate_piece(&mut self, rotation: i8) {
+    pub fn rotate_piece(&mut self, rotation: u8) {
         match self.active_piece {
             Some(mut p) => {
                 self.board.rotate_piece(&mut p, rotation);
@@ -46,7 +51,7 @@ impl Field {
 }
 impl fmt::Display for Field { 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-        let mut piece_minos: Option<[Vec2; 4]> = None;
+        let mut piece_minos: Option<PieceMinos> = None;
         match self.active_piece { 
             Some(piece) => {
                 piece_minos = Some(piece.get_raw_minos().map(
@@ -71,8 +76,8 @@ impl fmt::Display for Field {
                                     // println!("{} {}", j, mino.0);
                                     if j as i64 == mino.0 && (i) as i64 == mino.1 {
                                         // println!("MATCH~!!!");
-                                        // print!("{}", self.active_piece.color as i8);
-                                        tile = piece.color as i8;
+                                        // print!("{}", self.active_piece.color as u8);
+                                        tile = piece.color as u8;
                                     }
                                 }
                             }
@@ -86,12 +91,12 @@ impl fmt::Display for Field {
 
 
                 
-                let tile_color = PieceColor::from_int(tile);
+                let tile_color = piece_color_from_int(tile);
                 
                 if tile == 8 {
                     f.write_str("X");
                 } else {
-                    f.write_str(&tile_color.color_str(tile_color.to_char().into()));
+                   f.write_str(&color_str(tile_color, String::from(piece_color_to_char(tile_color))));
                 }
             }
             f.write_char('\n');

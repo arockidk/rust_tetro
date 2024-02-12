@@ -1,13 +1,13 @@
 use std::path::Display;
 
-use crate::{board::Board, piece::{Piece, PieceColor}, vec2::Vec2};
+use crate::{board::Board, piece::{piece_color_from_int, Piece, PieceColor}, vec2::Vec2};
 
-pub struct i64_board(i64);
+pub struct u64_board(u64);
 
-impl i64_board {
+impl u64_board {
     
-    pub fn new() -> i64_board {
-        i64_board(0)
+    pub fn new() -> u64_board {
+        u64_board(0)
     }
     pub fn in_4h_bounds(&self, position: Vec2) -> bool {
         position.0 >= 0 && position.0 < 10 && position.1 >= 0 && position.1 < 4
@@ -17,10 +17,10 @@ impl i64_board {
     }
     
     pub fn get_piece_color(&self) -> PieceColor {
-        PieceColor::from_int((self.0 & 15) as i8)
+        piece_color_from_int((self.0 & 15) as u8)
     }
     pub fn set_piece_color(&mut self, color: PieceColor) {
-        self.0 = (self.0 & !15) | (color as i64);
+        self.0 = (self.0 & !15) | (color as u64);
     }
     pub fn get_tile(&self, x: isize, y: isize) -> bool {
         if self.in_6h_bounds(Vec2(x.try_into().unwrap(), y.try_into().unwrap())) {
@@ -32,12 +32,12 @@ impl i64_board {
     }
 
     pub fn set_tile(&mut self, x: isize, y: isize, new: bool) {
-        self.0 = (self.0 & !(1 << (4 + x + y * 10))) | ((new as i64) << (4 + x + y * 10));
+        self.0 = (self.0 & !(1 << (4 + x + y * 10))) | ((new as u64) << (4 + x + y * 10));
     }
-    pub fn as_array(&self) -> [i8; 240] {
+    pub fn as_array(&self) -> [u8; 240] {
         let mut base = [0; 240];
         for i in 0..60 {
-            base[i] = ((self.0 >> i >> 4) & 1) as i8;
+            base[i] = ((self.0 >> i >> 4) & 1) as u8;
         }
         base
     }
@@ -71,7 +71,7 @@ impl i64_board {
         }
     }
 }
-impl std::fmt::Display for i64_board {
+impl std::fmt::Display for u64_board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_board())
     }

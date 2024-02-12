@@ -1,9 +1,11 @@
 use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
-
+use wasm_bindgen::convert::IntoWasmAbi;
+use ts_rs::TS;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
-#[derive(Clone, Copy, PartialEq, Debug, Eq)]
+#[derive(Clone, Copy, PartialEq, Debug, Eq, TS)]
+#[ts(export)]
 pub struct Vec2(pub i64, pub i64);
 impl Add<Vec2> for Vec2 { 
     type Output = Vec2; 
@@ -33,3 +35,5 @@ impl SubAssign<Vec2> for Vec2 {
         *self = Vec2(self.0 - rhs.0, self.1 - rhs.1)
     }
 }
+
+

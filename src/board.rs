@@ -1,15 +1,16 @@
+use js_sys::{Uint16Array, Uint8Array};
 use wasm_bindgen::prelude::wasm_bindgen;
 use std::fmt::{Display, Write};
 use crate::colors::get_piece_color;
 use crate::field;
 use crate::kicks::get_kicks;
-use crate::piece::{PieceColor, Direction};
+use crate::piece::{color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor};
 use crate::{kicks::get_180_kicks, piece::Piece};
 use crate::vec2::Vec2;
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 pub struct Board {
-    tiles: [i8; 240]
+    tiles: [u8; 240]
 }
 
 impl Board {
@@ -29,7 +30,7 @@ impl Board {
     pub fn tile_occupied(self: &Board, x: usize, y: usize) -> bool {
         return self.get_tile(x, y) != 0;
     }
-    pub fn get_tile(self: &Board, x: usize, y: usize) -> i8 {
+    pub fn get_tile(self: &Board, x: usize, y: usize) -> u8 {
         let pos = Vec2(x.try_into().unwrap(), y.try_into().unwrap());
         // print!("{:?}", pos);
         if self.in_bounds(pos) {
@@ -39,14 +40,14 @@ impl Board {
         }
         
     }
-    pub fn set_tile(self: &mut Board, x: usize, y: usize, new: i8) {
+    pub fn set_tile(self: &mut Board, x: usize, y: usize, new: u8) {
         self.tiles[y * 10 + x] = new;
     }
-    pub fn get_tile_array(self: &Board) -> [i8; 240] {
+    pub fn get_tile_array(self: &Board) -> [u8; 240] {
         return self.tiles;
     }
-    pub fn get_tile_matrix(self: &Board) -> [[i8; 10]; 24] {
-        let mut matrix: [[i8; 10]; 24] = [[0; 10]; 24];
+    pub fn get_tile_matrix(self: &Board) -> [[u8; 10]; 24] {
+        let mut matrix: [[u8; 10]; 24] = [[0; 10]; 24];
         for y in 0..24 {
             for x in 0..10 {
                 matrix[y][x] = self.get_tile(x, y);
@@ -54,7 +55,7 @@ impl Board {
         }
         return matrix;
     }
-    pub fn from_int_array(arr: [i8; 240]) -> Board {
+    pub fn from_int_array(arr: [u8; 240]) -> Board {
         let new_board = Board { 
         
             tiles: arr
@@ -62,14 +63,36 @@ impl Board {
 
         return new_board;
     }
-    pub fn from_4h_array(arr: [i8; 40]) -> Board {
-        let mut tiles: [i8; 240] = [0; 240];
+    pub fn from_4h_array(arr: [u8; 40]) -> Board {
+        let mut tiles: [u8; 240] = [0; 240];
         tiles[..=189].copy_from_slice(&[0; 190]);
         tiles[190..=229].copy_from_slice(&arr);
         tiles[230..].copy_from_slice(&[0; 10]);
         return Board::from_int_array(tiles);
     }
-    pub fn does_collide(self: &Board, piece: &Piece) -> bool {
+
+}
+#[wasm_bindgen]
+impl Board {
+    #[wasm_bindgen(js_name = fromIntArray)]
+    pub fn from_int_array_js(arr: Uint8Array) -> Board {
+        let arr = arr.to_vec().as_slice().try_into().unwrap();
+        let new_board = Board { 
+        
+            tiles: arr
+        };
+
+        return new_board;
+    }
+    #[wasm_bindgen(js_name = from4hArray)]
+    pub fn from_4h_array_js(arr: Uint8Array) -> Board {
+        let mut tiles: [u8; 240] = [0; 240];
+        tiles[..=189].copy_from_slice(&[0; 190]);
+        tiles[190..=229].copy_from_slice(arr.to_vec().as_slice().try_into().unwrap());
+        tiles[230..].copy_from_slice(&[0; 10]);
+        return Board::from_int_array(tiles);
+    }
+    pub fn does_collide(self: Board, piece: Piece) -> bool {
         let mut minos = piece.get_raw_minos();
         // println!("{:?}", piece.position);
         // println!("{:?}", minos.map(|
@@ -99,14 +122,15 @@ impl Board {
         return false;
 
     }
-    pub fn in_bounds(&self, pos: Vec2) -> bool { 
+    pub fn in_bounds(self, pos: Vec2) -> bool { 
         return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24
     }
-    pub fn rotate_piece(self: &mut Board , piece: &mut Piece, rotation: i8) -> bool {
+
+    pub fn rotate_piece(self: Board , piece: &mut Piece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
         let mod_rot = rotation % 4;
         let old_rot: usize = piece.rotation as usize;
-        let new_rot = (piece.rotation + mod_rot ) % 4;
+        let new_rot = (piece.rotation + mod_rot as i64 ) % 4;
         test_piece.rotation = Direction::from_int(new_rot.into());
         if mod_rot == 2 {
             // 180 rotation
@@ -115,7 +139,7 @@ impl Board {
             for i in 0..2 { 
                 let shift: Vec2 = kicks[old_rot][i] - kicks[new_rot as usize][i];
                 test_piece.position += shift;
-                if self.does_collide(&test_piece) {
+                if self.does_collide(test_piece) {
                     test_piece.position -= shift;
                     passed_tests = false;
                 } else {
@@ -144,7 +168,7 @@ impl Board {
                 // println!("Attempting to rotate with offset {:?}", shift);
                 // println!("{:?}", Vec2(10,23) - test_piece.position);
                 // println!("{}", field::Field::new(*self, test_piece));
-                if self.does_collide(&test_piece) {
+                if self.does_collide(test_piece) {
                     test_piece.position -= shift;
                     passed_tests = false;
                 } else {
@@ -159,12 +183,13 @@ impl Board {
         return false;
         
     }
-    pub fn das_piece(&self, piece: &mut Piece, direction: Direction) { 
+  
+    pub fn das_piece(self, piece: &mut Piece, direction: Direction) { 
         match direction { 
             Direction::East => {
                 for i in 0..11 {
                     piece.position += Vec2(1, 0);
-                    if self.does_collide(&piece) {
+                    if self.does_collide(*piece) {
                         piece.position -= Vec2(1, 0);
                         break;
                     }
@@ -173,7 +198,7 @@ impl Board {
             Direction::West => {
                 for i in 0..11 {
                     piece.position += Vec2(-1, 0);
-                    if self.does_collide(&piece) {
+                    if self.does_collide(*piece) {
                         piece.position -= Vec2(-1, 0);
                         break;
                     }
@@ -181,7 +206,7 @@ impl Board {
             }
             Direction::South => {
                 for i in 0..23 {
-                    if self.does_collide(&piece) {
+                    if self.does_collide(*piece) {
                         
                         piece.position += Vec2(0, 1);
                         break;
@@ -193,18 +218,27 @@ impl Board {
         }
         
     }
-    
+    #[wasm_bindgen(js_name = "canPlace")]
+    pub fn can_place(self, piece: Piece) -> bool {
+        if self.does_collide(piece) {
+           false 
+        } else {
+            let mut test = piece.clone();
+            test.apply_gravity(1);
+            self.does_collide(test)
+        }
+    }
 }
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..24 {
             for j in 0..10 {
                 let tile = self.tiles[i * 10 + j];
-                let tile_color = PieceColor::from_int(tile);
+                let tile_color = piece_color_from_int(tile);
                 if tile == 8 {
                     f.write_str("X");
                 } else {
-                    f.write_str(&tile_color.color_str(tile_color.to_char().into()));
+                    f.write_str(&color_str(tile_color, String::from(piece_color_to_char(tile_color))));
                 }
             }
             f.write_char('\n');

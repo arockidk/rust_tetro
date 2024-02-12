@@ -1,2 +1,2 @@
-mod i64_board_mod;
-pub use i64_board_mod::i64_board;
+mod u64_board_mod;
+pub use u64_board_mod::u64_board;

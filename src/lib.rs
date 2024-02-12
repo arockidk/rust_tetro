@@ -81,7 +81,7 @@ pub mod tests {
             piece::Direction::North,
             Vec2(9,20)
         );
-        assert_eq!(board.does_collide(&p), true);
+        assert_eq!(board.does_collide(p), true);
     }
     #[test]
     fn das_test() {
@@ -134,8 +134,8 @@ pub mod tests {
     }
     #[test]
     fn pc_test() {
-        use crate::pc_utils::i64_board;
-        let mut board = i64_board::new();
+        use crate::pc_utils::u64_board;
+        let mut board = u64_board::new();
         board.set_tile(4, 2, true);
         println!("{}", board);
         let mut t = piece::Piece::new(PieceColor::T, Direction::North, Vec2(0,0));

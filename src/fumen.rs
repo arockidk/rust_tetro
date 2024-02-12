@@ -1,9 +1,11 @@
 use std::cell::Cell;
 use std::collections::LinkedList;
 use fumen::{CellColor, Piece, PieceType, RotationState};
+use wasm_bindgen::{convert::FromWasmAbi, prelude::wasm_bindgen};
 
 use crate::{board::Board, field::Field, piece::{Direction, PieceColor}, vec2::Vec2};
 #[derive(Clone)]
+#[wasm_bindgen]
 pub struct Page {
     fumen_page: fumen::Page,
     field: Field,
@@ -12,13 +14,21 @@ pub struct Page {
     mirror: bool,
     comment: Option<String>
 } 
+#[wasm_bindgen()]
 pub struct Fumen {
-    pub pages: Vec<Page>,
+    pages: Vec<Page>,
     pub fumen: fumen::Fumen,
     pub guideline: bool
    
 }
-fn cell_color_to_i8(c: CellColor) -> i8 {
+// impl FromWasmAbi for Fumen {
+//     type Abi = ;
+
+//     unsafe fn from_abi(js: Self::Abi) -> Self {
+//         todo!()
+//     }
+// }
+fn cell_color_to_u8(c: CellColor) -> u8 {
     match c {
         CellColor::Empty => 0,
         CellColor::I => 1,
@@ -50,7 +60,7 @@ pub fn rotation_state_to_direction(rs: RotationState) -> Direction {
         RotationState::North => Direction::North
     }
 }
-fn i8_to_cell_color(i: i8) -> CellColor { 
+fn u8_to_cell_color(i: u8) -> CellColor { 
     match i {
         0 => CellColor::Empty,
         1 => CellColor::I,
@@ -85,7 +95,7 @@ fn direction_to_rotation_state(dir: Direction) -> RotationState {
     }
 }
 impl std::default::Default for Page {
-    fn default() -> Self {
+        fn default() -> Self {
         Page {
             field: Field::new(Board::new(), None),
             rise: false,
@@ -100,7 +110,7 @@ impl Page  {
     // pub fn to_fumen_page(&self) -> fumen::Page {
     //     fumen::Page {
     //         field: self.field.board.get_tile_matrix().map(
-    //             |v| v.map(|c| i8_to_cell_color(c)) 
+    //             |v| v.map(|c| u8_to_cell_color(c)) 
     //         )[0..23].try_into().unwrap(),
     //         piece: Some(Piece { 
     //             kind: piece_color_to_fumen_piece_type(self.field.active_piece.color),
@@ -110,7 +120,7 @@ impl Page  {
                 
     //         }),
     //         garbage_row: self.field.board.get_tile_matrix().map(
-    //             |v| v.map(|c| i8_to_cell_color(c)) 
+    //             |v| v.map(|c| u8_to_cell_color(c)) 
     //         )[23],
     //         rise: self.rise,
     //         mirror: self.mirror,
@@ -178,13 +188,13 @@ impl Page  {
         println!("{}", inversed_field);
         self.field = inversed_field;
         self.fumen_page.field = inversed_field.board.get_tile_matrix().map(
-            |v| v.map(|c| i8_to_cell_color(c))
+            |v| v.map(|c| u8_to_cell_color(c))
         )[1..24].try_into().unwrap();
         println!("{}", self.fumen_page.field.map(
-            |row| format!("{:?}\n", row.map(|c| cell_color_to_i8(c)))
+            |row| format!("{:?}\n", row.map(|c| cell_color_to_u8(c)))
         ).join("\n")); 
         // self.fumen_page.garbage_row = inversed_field.board.get_tile_matrix().map(
-        //     |v| v.map(|c| i8_to_cell_color(c))
+        //     |v| v.map(|c| u8_to_cell_color(c))
         // )[];
     }
     pub fn set_rise(&mut self, rise: bool) {

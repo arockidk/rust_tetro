@@ -1,7 +1,8 @@
 #![allow(unused_must_use)]
+use fumen::Piece;
 use wasm_bindgen::prelude::*;
 
-use crate::piece::PieceColor;
+use crate::piece::{piece_color_to_char, PieceColor};
 use core::fmt;
 use std::fmt::Write;
 
@@ -10,6 +11,7 @@ use std::fmt::Write;
 pub struct Queue {
     pieces: Vec<PieceColor>
 }
+#[wasm_bindgen]
 impl Queue {
     pub fn push(&mut self, color: PieceColor) {
         self.pieces.push(color);
@@ -23,7 +25,7 @@ impl fmt::Display for Queue {
         
         for i in 0..self.pieces.len() {
             let piece = self.pieces[i];
-            f.write_char(piece.to_char());
+            f.write_char(piece_color_to_char(piece));
             if i != self.pieces.len() - 1 {
                 f.write_char(',');
                 f.write_char(' ');
