@@ -61,7 +61,7 @@ impl Board {
     pub fn to_board_coords(&self, original: Vec2) -> Vec2 {
         Vec2(original.0, -original.1 + 23)
     }
-    #[wasm_bindgen(js_name = inBounds)]
+    #[wasm_bindgen(js_name = tileOccupied)]
     pub fn tile_occupied(&self, x: usize, y: usize) -> bool {
         self.get_tile(x, y) != 0
     }
