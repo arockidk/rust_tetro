@@ -14,35 +14,7 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new() -> Board {
-        
-        let new_board = Board { 
-           
-            tiles: [0; 240]
-
-        };
-
-        return new_board;
-    }
-    pub fn to_board_coords(&self, original: Vec2) -> Vec2 {
-        return Vec2(original.0, -original.1 + 23);
-    }
-    pub fn tile_occupied(self: &Board, x: usize, y: usize) -> bool {
-        return self.get_tile(x, y) != 0;
-    }
-    pub fn get_tile(self: &Board, x: usize, y: usize) -> u8 {
-        let pos = Vec2(x.try_into().unwrap(), y.try_into().unwrap());
-        // print!("{:?}", pos);
-        if self.in_bounds(pos) {
-            return self.tiles[y * 10 + x];
-        } else {
-            return 8 
-        }
-        
-    }
-    pub fn set_tile(self: &mut Board, x: usize, y: usize, new: u8) {
-        self.tiles[y * 10 + x] = new;
-    }
+    
     pub fn get_tile_array(self: &Board) -> [u8; 240] {
         return self.tiles;
     }
@@ -74,6 +46,40 @@ impl Board {
 }
 #[wasm_bindgen]
 impl Board {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Board {
+        
+        let new_board = Board { 
+           
+            tiles: [0; 240]
+
+        };
+
+        return new_board;
+    }
+    #[wasm_bindgen(js_name = toBoardCoords)]
+    pub fn to_board_coords(&self, original: Vec2) -> Vec2 {
+        Vec2(original.0, -original.1 + 23)
+    }
+    #[wasm_bindgen(js_name = inBounds)]
+    pub fn tile_occupied(&self, x: usize, y: usize) -> bool {
+        self.get_tile(x, y) != 0
+    }
+    #[wasm_bindgen(js_name = getTile)]
+    pub fn get_tile(&self, x: usize, y: usize) -> u8 {
+        let pos = Vec2(x.try_into().unwrap(), y.try_into().unwrap());
+        // print!("{:?}", pos);
+        if self.in_bounds(pos) {
+            self.tiles[y * 10 + x]
+        } else {
+            8 
+        }
+        
+    }
+    #[wasm_bindgen(js_name = setTile)]
+    pub fn set_tile(&mut self, x: usize, y: usize, new: u8) {
+        self.tiles[y * 10 + x] = new;
+    }
     #[wasm_bindgen(js_name = fromIntArray)]
     pub fn from_int_array_js(arr: Uint8Array) -> Board {
         let arr = arr.to_vec().as_slice().try_into().unwrap();
@@ -92,6 +98,7 @@ impl Board {
         tiles[230..].copy_from_slice(&[0; 10]);
         return Board::from_int_array(tiles);
     }
+    #[wasm_bindgen(js_name = doesCollide)]
     pub fn does_collide(&self, piece: TetPiece) -> bool {
         let mut minos = piece.get_raw_minos();
         // println!("{:?}", piece.position);
@@ -122,10 +129,11 @@ impl Board {
         return false;
 
     }
+    #[wasm_bindgen(js_name = inBounds)]
     pub fn in_bounds(&self, pos: Vec2) -> bool { 
         return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24
     }
-
+    #[wasm_bindgen(js_name = rotatePiece)]
     pub fn rotate_piece(&self , piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
         let mod_rot = rotation % 4;
@@ -183,7 +191,7 @@ impl Board {
         return false;
         
     }
-  
+    #[wasm_bindgen(js_name = "dasPiece")]
     pub fn das_piece(&self, piece: &mut TetPiece, direction: Direction) { 
         match direction { 
             Direction::East => {

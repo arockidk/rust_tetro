@@ -1,7 +1,9 @@
 use std::path::Display;
 
-use crate::{board::Board, piece::{piece_color_from_int, TetPiece, PieceColor}, vec2::Vec2};
+use wasm_bindgen::prelude::wasm_bindgen;
 
+use crate::{board::Board, piece::{piece_color_from_int, TetPiece, PieceColor}, vec2::Vec2};
+#[wasm_bindgen]
 pub struct u64_board(u64);
 
 impl u64_board {

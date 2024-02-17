@@ -16,11 +16,12 @@ pub struct Field {
 
 #[wasm_bindgen]
 impl Field {
+    #[wasm_bindgen(constructor)]
     pub fn new(board: Board, active_piece: Option<TetPiece>) -> Field {
         Field {board: board, active_piece: active_piece}
         
     }
-
+    #[wasm_bindgen(js_name = canPlaceActivePiece)]
     pub fn can_place_active_piece(self: &Field) -> bool { 
         match self.active_piece {
             Some(mut p) => {
@@ -29,6 +30,7 @@ impl Field {
             None => false
         }
     }
+    #[wasm_bindgen(js_name = dasPiece)]
     pub fn das_piece(&mut self, direction: Direction){
         match self.active_piece {
             Some(mut p) => {
@@ -39,6 +41,7 @@ impl Field {
         
         // print!("{:?}", self.active_piece.position);
     }
+    #[wasm_bindgen(js_name = rotatePiece)]
     pub fn rotate_piece(&mut self, rotation: u8) {
         match self.active_piece {
             Some(mut p) => {

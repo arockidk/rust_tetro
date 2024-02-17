@@ -1,3 +1,5 @@
+use wasm_bindgen::prelude::wasm_bindgen;
+
 /**
  * Represents a keypress.
  * Bits 1 2 3 4 5 6 7 8
@@ -10,7 +12,10 @@
  * Bit 7: Hold
  * Bit 8: 180 Rotation
  */
+#[derive(Copy, Clone)]
+#[wasm_bindgen]
 struct Action(u8);
+#[wasm_bindgen]
 impl Action {
     pub fn get_left(self) -> bool {
         return (self.0 & 0b10000000) != 0;

@@ -224,6 +224,7 @@ impl TetPiece {
         return piece;
     }
     
+    #[wasm_bindgen(js_name = "applyGravity")]
     pub fn apply_gravity(&mut self, force: i64) {
         self.position.1 -= force;
     }
