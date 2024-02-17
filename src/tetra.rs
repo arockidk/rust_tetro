@@ -6,7 +6,7 @@ pub struct Tetra {
     pub score: i32,
     pub field: field::Field,
     queue: queue::Queue,
-    pub hold: piece::TetPiece
+    pub hold: Option<piece::TetPiece>
 }
 #[wasm_bindgen]
 impl Tetra {
