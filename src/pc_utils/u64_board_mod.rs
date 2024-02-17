@@ -1,6 +1,6 @@
 use std::path::Display;
 
-use crate::{board::Board, piece::{piece_color_from_int, Piece, PieceColor}, vec2::Vec2};
+use crate::{board::Board, piece::{piece_color_from_int, TetPiece, PieceColor}, vec2::Vec2};
 
 pub struct u64_board(u64);
 
@@ -48,7 +48,7 @@ impl u64_board {
         }
         new_board
     }
-    pub fn does_collide(&self, piece: Piece) -> bool { 
+    pub fn does_collide(&self, piece: TetPiece) -> bool { 
         let minos = piece.get_minos();
         if piece.position.1 > 6 {
             return true;
@@ -61,7 +61,7 @@ impl u64_board {
         }
         return false;
     }
-    pub fn can_place(&self, piece: Piece) -> bool {
+    pub fn can_place(&self, piece: TetPiece) -> bool {
         if self.does_collide(piece) {
            false 
         } else {

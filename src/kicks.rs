@@ -1,4 +1,4 @@
-use crate::piece::{Piece, PieceColor};
+use crate::piece::{TetPiece, PieceColor};
 use crate::vec2::Vec2;
 
 pub type KickData = [[Vec2; 5]; 4];
@@ -48,7 +48,7 @@ const O_KICKS_180: [[Vec2; 2]; 4] = [
     [Vec2( 0, 0), Vec2( 0, 0 )],
 ];
 
-pub fn get_kicks(piece: Piece) -> KickData {
+pub fn get_kicks(piece: TetPiece) -> KickData {
     match piece.color {
         PieceColor::I => I_KICKS,
         PieceColor::O => O_KICKS,
@@ -56,7 +56,7 @@ pub fn get_kicks(piece: Piece) -> KickData {
         
     }
 }
-pub fn get_180_kicks(piece: Piece) -> KickData180 { 
+pub fn get_180_kicks(piece: TetPiece) -> KickData180 { 
     match piece.color { 
         PieceColor::I => I_KICKS_180,
         PieceColor::O => O_KICKS_180,

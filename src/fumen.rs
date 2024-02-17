@@ -5,8 +5,9 @@ use wasm_bindgen::{convert::FromWasmAbi, prelude::wasm_bindgen};
 
 use crate::{board::Board, field::Field, piece::{Direction, PieceColor}, vec2::Vec2};
 #[derive(Clone)]
+
 #[wasm_bindgen]
-pub struct Page {
+pub struct TetPage {
     fumen_page: fumen::Page,
     field: Field,
     rise: bool,
@@ -15,9 +16,9 @@ pub struct Page {
     comment: Option<String>
 } 
 #[wasm_bindgen()]
-pub struct Fumen {
-    pages: Vec<Page>,
-    pub fumen: fumen::Fumen,
+pub struct TetFumen {
+    pages: Vec<TetPage>,
+    fumen: fumen::Fumen,
     pub guideline: bool
    
 }
@@ -94,9 +95,9 @@ fn direction_to_rotation_state(dir: Direction) -> RotationState {
         Direction::North => RotationState::North
     }
 }
-impl std::default::Default for Page {
-        fn default() -> Self {
-        Page {
+impl std::default::Default for TetPage {
+    fn default() -> Self {
+        TetPage {
             field: Field::new(Board::new(), None),
             rise: false,
             lock: true,
@@ -106,7 +107,8 @@ impl std::default::Default for Page {
         }
     }
 }
-impl Page  {
+#[wasm_bindgen]
+impl TetPage  {
     // pub fn to_fumen_page(&self) -> fumen::Page {
     //     fumen::Page {
     //         field: self.field.board.get_tile_matrix().map(
@@ -187,12 +189,12 @@ impl Page  {
         println!("{}", field);
         println!("{}", inversed_field);
         self.field = inversed_field;
-        self.fumen_page.field = inversed_field.board.get_tile_matrix().map(
+        self.fumen_page.set_field_rs(inversed_field.board.get_tile_matrix().map(
             |v| v.map(|c| u8_to_cell_color(c))
-        )[1..24].try_into().unwrap();
-        println!("{}", self.fumen_page.field.map(
-            |row| format!("{:?}\n", row.map(|c| cell_color_to_u8(c)))
-        ).join("\n")); 
+        )[1..24].try_into().unwrap());
+        // println!("{}", self.fumen_page.field.map(
+        //     |row| format!("{:?}\n", row.map(|c| cell_color_to_u8(c)))
+        // ).join("\n")); 
         // self.fumen_page.garbage_row = inversed_field.board.get_tile_matrix().map(
         //     |v| v.map(|c| u8_to_cell_color(c))
         // )[];
@@ -211,48 +213,48 @@ impl Page  {
     }
     pub fn set_comment(&mut self, comment: Option<String>) {
         self.comment = comment.clone();
-        self.fumen_page.comment = comment.clone();
+        self.fumen_page.set_comment_rs(comment.clone());
         
     }
-    pub fn get_field(& mut self) -> &mut Field {
-        &mut self.field   
+    pub fn field(&mut self) -> *mut Field {
+        &mut self.field
     }
-}
-impl Page {
-    pub fn from_fumen_page<'a>(pg: fumen::Page) -> Page {
-        Page { 
+    pub fn from_fumen_page(pg: fumen::Page) -> TetPage {
+        TetPage { 
             field: Field::new(Board::new(), None),
             rise: pg.rise,
             lock: pg.lock,
             mirror: pg.mirror,
-            comment: pg.comment.clone(),
+            comment: pg.get_comment().clone(),
             fumen_page: pg,
         }
     }
 }
-
-impl Fumen { 
-    pub fn new() -> Fumen {
-        Fumen {
+impl TetPage {
+    pub fn get_field_rs(&mut self) -> &mut Field {
+        &mut self.field   
+    }
+}
+#[wasm_bindgen]
+impl TetFumen { 
+    pub fn new() -> TetFumen {
+        TetFumen {
             pages: Vec::new(),
-            fumen: fumen::Fumen {
-                pages: Vec::new(),
-                guideline: true
-            },
-            guideline: true,
+            fumen: fumen::Fumen::new(),
+            guideline: true
         }
     }
-    pub fn add_page(&mut self) -> &mut Page {
-        let mut page = Page::default();
+    pub fn add_page(&mut self) -> *mut TetPage {
+        let mut page = TetPage::default();
         self.pages.push(page.clone());
         self.pages.last_mut().unwrap()
         
     }
     pub fn update(&mut self) {
-        self.fumen.pages.clear();
+        self.fumen.get_pages_mut().clear();
         for page in self.pages.iter() {
             let pg = page.clone();
-            self.fumen.pages.push(pg.fumen_page);
+            self.fumen.get_pages_mut().push(pg.fumen_page);
         }
     }
     pub fn encode_fumen(&mut self) -> String { 
@@ -263,10 +265,18 @@ impl Fumen {
         let new_page = fumen::Fumen::decode(fumen.as_str()).unwrap();
         self.fumen = new_page.clone();
         self.pages = Vec::new();
-        for page in new_page.pages { 
-            self.pages.push(Page::from_fumen_page(page));
+        for page in new_page.get_pages() { 
+            self.pages.push(TetPage::from_fumen_page(page.clone()));
         }
         
     }
 
+}
+impl TetFumen {
+    pub fn add_page_rs(&mut self) -> &mut TetPage {
+        let mut page = TetPage::default();
+        self.pages.push(page.clone());
+        self.pages.last_mut().unwrap()
+        
+    }
 }

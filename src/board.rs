@@ -5,7 +5,7 @@ use crate::colors::get_piece_color;
 use crate::field;
 use crate::kicks::get_kicks;
 use crate::piece::{color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor};
-use crate::{kicks::get_180_kicks, piece::Piece};
+use crate::{kicks::get_180_kicks, piece::TetPiece};
 use crate::vec2::Vec2;
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
@@ -92,7 +92,7 @@ impl Board {
         tiles[230..].copy_from_slice(&[0; 10]);
         return Board::from_int_array(tiles);
     }
-    pub fn does_collide(self: Board, piece: Piece) -> bool {
+    pub fn does_collide(&self, piece: TetPiece) -> bool {
         let mut minos = piece.get_raw_minos();
         // println!("{:?}", piece.position);
         // println!("{:?}", minos.map(|
@@ -122,11 +122,11 @@ impl Board {
         return false;
 
     }
-    pub fn in_bounds(self, pos: Vec2) -> bool { 
+    pub fn in_bounds(&self, pos: Vec2) -> bool { 
         return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24
     }
 
-    pub fn rotate_piece(self: Board , piece: &mut Piece, rotation: u8) -> bool {
+    pub fn rotate_piece(&self , piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
         let mod_rot = rotation % 4;
         let old_rot: usize = piece.rotation as usize;
@@ -184,7 +184,7 @@ impl Board {
         
     }
   
-    pub fn das_piece(self, piece: &mut Piece, direction: Direction) { 
+    pub fn das_piece(&self, piece: &mut TetPiece, direction: Direction) { 
         match direction { 
             Direction::East => {
                 for i in 0..11 {
@@ -219,7 +219,7 @@ impl Board {
         
     }
     #[wasm_bindgen(js_name = "canPlace")]
-    pub fn can_place(self, piece: Piece) -> bool {
+    pub fn can_place(&self, piece: TetPiece) -> bool {
         if self.does_collide(piece) {
            false 
         } else {

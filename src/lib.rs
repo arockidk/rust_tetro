@@ -23,15 +23,15 @@ pub mod tests {
     use crate::queue::choose;
     use crate::piece;
     use crate::vec2::Vec2;
-    use crate::fumen::Fumen;
+    use crate::fumen::TetFumen;
     
 
   
 
     #[test]
     fn fumen_test() {
-        let mut pco = crate::fumen::Fumen::new();
-        let page = pco.add_page();
+        let mut pco = crate::fumen::TetFumen::new();
+        let page = pco.add_page_rs();
         
         
         page.set_field(field::Field { board: board::Board::from_4h_array([
@@ -52,7 +52,7 @@ pub mod tests {
     }
     #[test]
     fn piece_test () {
-        let mut p = piece::Piece::new(
+        let mut p = piece::TetPiece::new(
             piece::PieceColor::I,
             piece::Direction::North,
             Vec2(4,21)
@@ -76,7 +76,7 @@ pub mod tests {
     #[test]
     fn collision_test () {
         let board = board::Board::new();
-        let mut p = piece::Piece::new(
+        let mut p = piece::TetPiece::new(
             piece::PieceColor::I,
             piece::Direction::North,
             Vec2(9,20)
@@ -85,7 +85,7 @@ pub mod tests {
     }
     #[test]
     fn das_test() {
-        let mut i = piece::Piece::new(PieceColor::I, Direction::North, Vec2(4,20));
+        let mut i = piece::TetPiece::new(PieceColor::I, Direction::North, Vec2(4,20));
         let mut f = field::Field::new(board::Board::new(), Some(i));
         f.das_piece(Direction::East);
         f.das_piece(Direction::South);
@@ -95,7 +95,7 @@ pub mod tests {
     }
     #[test]
     fn rotation_test () {
-        let s = piece::Piece::new(PieceColor::S, Direction::North, Vec2(4,20));
+        let s = piece::TetPiece::new(PieceColor::S, Direction::North, Vec2(4,20));
         let mut standard_s_kick = field::Field::new(board::Board::from_4h_array([
             0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0,0,0,0,0,
@@ -117,19 +117,19 @@ pub mod tests {
     #[allow(non_snake_case)]
     fn piece_color_test() {
         
-        let I = piece::Piece::new(PieceColor::I, Direction::North, Vec2(4,20));
+        let I = piece::TetPiece::new(PieceColor::I, Direction::North, Vec2(4,20));
         println!("{}", I);
-        let L = piece::Piece::new(PieceColor::L, Direction::North, Vec2(4,20));
+        let L = piece::TetPiece::new(PieceColor::L, Direction::North, Vec2(4,20));
         println!("{}", L);
-        let O = piece::Piece::new(PieceColor::O, Direction::North, Vec2(4,20));
+        let O = piece::TetPiece::new(PieceColor::O, Direction::North, Vec2(4,20));
         println!("{}", O);
-        let T = piece::Piece::new(PieceColor::T, Direction::North, Vec2(4,20));
+        let T = piece::TetPiece::new(PieceColor::T, Direction::North, Vec2(4,20));
         println!("{}", T);
-        let J = piece::Piece::new(PieceColor::J, Direction::North, Vec2(4,20));
+        let J = piece::TetPiece::new(PieceColor::J, Direction::North, Vec2(4,20));
         println!("{}", J);
-        let S = piece::Piece::new(PieceColor::S, Direction::North, Vec2(4,20));
+        let S = piece::TetPiece::new(PieceColor::S, Direction::North, Vec2(4,20));
         println!("{}", S);
-        let Z = piece::Piece::new(PieceColor::Z, Direction::North, Vec2(4,20));
+        let Z = piece::TetPiece::new(PieceColor::Z, Direction::North, Vec2(4,20));
         println!("{}", Z);
     }
     #[test]
@@ -138,7 +138,7 @@ pub mod tests {
         let mut board = u64_board::new();
         board.set_tile(4, 2, true);
         println!("{}", board);
-        let mut t = piece::Piece::new(PieceColor::T, Direction::North, Vec2(0,0));
+        let mut t = piece::TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
         assert_eq!(board.does_collide(t), true);
         t.position += Vec2(1,0);
         assert_eq!(board.does_collide(t), false);

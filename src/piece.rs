@@ -52,7 +52,6 @@ pub fn piece_color_to_char(color: PieceColor) -> char {
 pub fn color_str(color: PieceColor, str: String) -> String {
     format!("{}{}{}", get_piece_color(color), str, get_blank())
 }   
-
 #[wasm_bindgen]
 #[derive(PartialEq, Eq, Clone, Copy, TS)]
 #[ts(export)]
@@ -62,20 +61,31 @@ pub enum Direction {
     South = 2,
     West = 3
 }
+
+
 #[wasm_bindgen]
-impl Direction {
-    pub fn to_i8(self) -> i8 {
-        match self {
-         Direction::North => 0,
-         Direction::East => 1,
-         Direction::South => 2,
-         Direction::West => 3
-        }
-    }
-    pub fn to_i64(self) -> i64 {
-        self.to_i8() as i64        
+
+pub fn direction_to_i8(dir: Direction) -> i8 {
+    match dir {
+        Direction::North => 0,
+        Direction::East => 1,
+        Direction::South => 2,
+        Direction::West => 3
     }
 }
+#[wasm_bindgen]
+pub fn direction_to_i64(dir: Direction) -> i64 {
+    direction_to_i8(dir) as i64        
+}
+impl Direction {
+    pub fn to_i8(&self) -> i8 {
+        direction_to_i8(*self)
+    }
+    pub fn to_i64(&self) -> i64 {
+        direction_to_i64(*self)
+    }
+}
+
 impl Sub for Direction { 
     type Output = i64;
     fn sub(self, rhs: Self) -> Self::Output {
@@ -161,12 +171,12 @@ static BLOCKS: [PieceMinos; 7] = [
 #[derive(Clone, Copy, TS)]
 #[ts(export)]
 #[wasm_bindgen]
-pub struct Piece {
+pub struct TetPiece {
     pub color: PieceColor,
     pub rotation: Direction,
     pub position: Vec2
 }
-impl fmt::Display for Piece { 
+impl fmt::Display for TetPiece { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let minos = self.get_minos();
         let mut str_matrix: [[&str; 4]; 4] = [
@@ -202,10 +212,10 @@ impl fmt::Display for Piece {
 pub type PieceMinos = [Vec2; 4];
 
 #[wasm_bindgen]
-impl Piece {
+impl TetPiece {
     #[wasm_bindgen(constructor)]
-    pub fn new(color: PieceColor, rotation: Direction, position: Vec2) -> Piece {
-        let piece = Piece {
+    pub fn new(color: PieceColor, rotation: Direction, position: Vec2) -> TetPiece {
+        let piece = TetPiece {
             color,
             rotation,
             position
@@ -218,7 +228,7 @@ impl Piece {
         self.position.1 -= force;
     }
 }
-impl Piece {
+impl TetPiece {
     pub fn get_raw_minos(&self) -> PieceMinos {
         let mut minos: PieceMinos = BLOCKS[self.color as usize - 1];
         for i in 0..4 {
@@ -242,7 +252,7 @@ impl Piece {
         }
         return minos;
     }
-    pub fn get_minos(self: &Piece) -> PieceMinos {
+    pub fn get_minos(self: &TetPiece) -> PieceMinos {
         let mut minos: PieceMinos = self.get_raw_minos();
         // println!("{:?}", minos);
         for mino in &mut minos {
