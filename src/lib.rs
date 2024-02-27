@@ -45,10 +45,23 @@ pub mod tests {
     }
     #[test]
     fn queue_test () {
-        let allp4 = choose(Vec::from(get_pieces()), 4);
+        let allp4 = choose(Vec::from(get_pieces()), 4, false);
         for queue in allp4 {
             println!("{}", queue)
         }
+    }
+    #[test]
+    fn choose_test() {
+        use crate::queue::QueueNode;
+        use crate::queue::Choose;
+        let allp4 = Queue::new();
+        let choose = Choose::from_string(
+            "*p4".to_string()
+        );
+        assert!(choose.is_ok());
+        let choose = choose.unwrap();
+        assert_eq!(choose.to_string(), "*p4".to_string());
+            
     }
     #[test]
     fn piece_test () {
