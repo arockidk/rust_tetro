@@ -3,7 +3,7 @@ use fumen::Piece;
 use wasm_bindgen::prelude::*;
 
 use crate::{math::factorial, piece::{piece_color_to_char, PieceColor, TetPiece}};
-use core::fmt;
+use core::{fmt, panicking::panic};
 use std::{collections::HashSet, fmt::Write};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -129,6 +129,28 @@ impl QueueNode {
         }
         
     }
+    pub fn last(&self) -> &QueueNode{
+        if let Some(next) = self.next {
+            let mut cur = self;
+            while cur.next.is_some() {
+                cur = cur.next.as_ref().unwrap();
+            }
+            cur
+        } else {
+            self
+        }
+    }
+    pub fn last_mut(&mut self) -> &mut QueueNode{
+        if let Some(next) = self.next {
+            let mut cur = self;
+            while cur.next.is_some() {
+                cur = cur.next.as_mut().unwrap();
+            }
+            cur
+        } else {
+            self
+        }
+    }
     pub fn len(&self) -> usize {
         if let Some(next) = self.next {
             let mut cur = Box::new(*self);
@@ -191,6 +213,13 @@ impl Queue {
         }
         queues
     }
+    pub fn head(&self) -> QueueNode {
+        if self.head.is_some() {
+            self.head.unwrap()
+        } else {
+            panic!("Head node doesn't exist")
+        }
+    }
 }
 impl Queue {
     pub fn push(&mut self, node: QueueNode) {
@@ -216,30 +245,37 @@ impl Queue {
     pub fn len(&self) -> usize {
         if let Some(head) = &self.head {
             head.len()
+        } else {
+            0
         }
     }
 }
 impl fmt::Display for Queue { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(mut head) = self.head {
+            for i in 0..self.len() {
+                
+                if let Some(mut piece) = head.at(i).clone() {
+                    match piece.node_type {
+                        QueueNodeType::Piece => {
+                            f.write_char(piece_color_to_char(piece.piece.unwrap()));
+                        }
+                        QueueNodeType::Choose => {
+                            f.write_str(piece.choose.unwrap().to_string().as_str());
+                        }
+                    }
+                    if i != self.len() - 1 {
+                        f.write_char(',');
+                        f.write_char(' ');
         
-        for i in 0..self.pieces.len() {
-            let piece = self.pieces[i].clone();
-            match piece {
-                QueueNode::Piece(color, _) => {
-                    f.write_char(piece_color_to_char(color));
+                    } 
                 }
-                QueueNode::Choose(choose, _) => {
-                    f.write_str(choose.to_string().as_str());
-                }
+                
             }
-            if i != self.pieces.len() - 1 {
-                f.write_char(',');
-                f.write_char(' ');
-
-            } 
         }
+
         
-        return fmt::Result::Ok(());
+        fmt::Result::Ok(())
     }
 }
 #[derive(Clone)]
@@ -288,20 +324,25 @@ impl Choose {
          
         let mut ret: Vec<Queue> = Vec::new();
         let state = ChooseState {
-            queue: Queue { pieces: Vec::new() },
+            queue: Queue::new(),
             choose: self.clone()
         };
         for i in 0..self.pieces.len() {
             
             let piece = state.choose.pieces[i];
             let mut state_clone = state.clone();
-            let mut new = QueueNode::Piece(piece, Box::new(None));
-            let last = state_clone.queue.pieces.last_mut().unwrap();
-            match last {
-                QueueNode::Piece(color, next) => {
-                    *next = Box::new(Some(new));
+            let mut new = QueueNode {   
+                node_type: QueueNodeType::Piece,
+                choose: None,
+                piece: Some(piece),
+                next: None
+            };
+            let last = state_clone.queue.head().last_mut();
+            match last.node_type {
+                QueueNodeType::Piece => {
+                    last.next = Some(Box::new(new));
                 }
-                QueueNode::Choose(_, _) => (),
+                _ => (),
                 
             }
             state_clone.queue.push(new);
@@ -321,13 +362,18 @@ impl Choose {
         for i in 0..state.choose.pieces.len() {
             let piece = state.choose.pieces[i];
             let mut state_clone = state.clone();
-            let mut new = QueueNode::Piece(piece, Box::new(None));
-            let last = state_clone.queue.pieces.last_mut().unwrap();
-            match last {
-                QueueNode::Piece(color, next) => {
-                    *next = Box::new(Some(new));
+            let mut new = QueueNode {   
+                node_type: QueueNodeType::Piece,
+                choose: None,
+                piece: Some(piece),
+                next: None
+            };
+            let last = state_clone.queue.head().last_mut();
+            match last.node_type {
+                QueueNodeType::Piece => {
+                    last.next = Some(Box::new(new));
                 }
-                QueueNode::Choose(_, _) => (),
+                _ => (),
                 
             }
             state_clone.queue.push(new);
