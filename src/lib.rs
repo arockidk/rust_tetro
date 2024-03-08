@@ -60,8 +60,13 @@ pub mod tests {
         );
         assert!(choose.is_ok());
         let choose = choose.unwrap();
+        // println!("{:?} {} {}", choose.pieces, choose.count, choose.inverse);
         assert_eq!(choose.to_string(), "*p4".to_string());
-            
+        let queues = choose.get_queues();
+        assert_eq!(queues.len(), 840);
+        for queue in queues {
+            println!("{}", queue);
+        }
     }
     #[test]
     fn piece_test () {

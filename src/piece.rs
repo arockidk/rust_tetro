@@ -21,7 +21,9 @@ pub enum PieceColor {
     J=6,
     S=7
 }
-
+pub fn is_piece_color(c: char) -> bool {
+    c == 'I' || c == 'L' || c == 'O' || c == 'Z' || c == 'T' || c == 'J' || c == 'S'
+}
 
 #[wasm_bindgen(js_name = "pieceColorFromInt")]
 pub fn piece_color_from_int(int: u8) -> PieceColor {
