@@ -8,7 +8,7 @@ use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
 use ts_rs::TS;
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, TS, serde::Serialize, serde::Deserialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, TS, serde::Serialize, serde::Deserialize, PartialOrd, Ord)]
 #[ts(export)]
 #[wasm_bindgen]
 pub enum PieceColor {

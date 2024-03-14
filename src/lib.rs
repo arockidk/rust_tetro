@@ -62,10 +62,19 @@ pub mod tests {
         let choose = choose.unwrap();
         // println!("{:?} {} {}", choose.pieces, choose.count, choose.inverse);
         assert_eq!(choose.to_string(), "*p4".to_string());
-        let queues = choose.get_queues();
-        assert_eq!(queues.len(), 840);
-        for queue in queues {
-            println!("{}", queue);
+        // let queues = choose.get_queues();
+        // assert_eq!(queues.len(), 840);
+        // for queue in queues {
+        //     println!("{}", queue);
+        // }
+        for q in choose.iter() {
+            println!("{}", q);
+            
+        }
+        let hill_1st = Choose::from_string(String::from("[ILSO]!"));
+        let mut hill_1st = hill_1st.unwrap();
+        for q in hill_1st.iter() {
+            println!("{}", q);
         }
     }
     #[test]

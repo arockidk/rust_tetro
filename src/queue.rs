@@ -2,9 +2,9 @@
 use fumen::Piece;
 use wasm_bindgen::prelude::*;
 
-use crate::{math::factorial, piece::{is_piece_color, piece_color_to_char, PieceColor, TetPiece}};
+use crate::{math::{factorial, usize_factorial}, piece::{is_piece_color, piece_color_to_char, PieceColor, TetPiece}};
 use core::fmt;
-use std::{collections::HashSet, fmt::Write};
+use std::{collections::HashSet, fmt::Write, iter};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub enum QueueNodeType {
@@ -182,21 +182,7 @@ impl Queue {
         
         serde_wasm_bindgen::to_value(&node)
     }
-    // pub fn get_queues(&self) -> Vec<Queue> {
-    //     let queues: Vec<Queue> = Vec::new();
-    //     let mut base_queue = Queue {pieces: Vec::new()};
-    //     for node in &self.pieces {
-    //         match node {
-    //             QueueNode::Piece(_, _) => {
-    //                 base_queue.push(node.clone());
-    //             }
-    //             QueueNode::Choose(_, _) => {
-                    
-    //             }
-    //         }
-    //     }
-    //     queues
-    // }
+
     pub fn head(&self) -> QueueNode {
         if self.head.is_some() {
             self.head.clone().unwrap()
@@ -204,6 +190,7 @@ impl Queue {
             panic!("Head node doesn't exist")
         }
     }
+
 }
 impl Queue {
     pub fn push(&mut self, node: QueueNode) {
@@ -316,11 +303,12 @@ impl Choose {
         Ok(choose)
     }
     pub fn size(&self) -> usize {
-        (
-            factorial(self.pieces.len().try_into().unwrap()) 
+        let n = self.pieces.len();
+        let r = self.count;
+            usize_factorial(n) 
                             / 
-            factorial((self.pieces.len() - self.count).try_into().unwrap())
-        ).try_into().unwrap()   
+            usize_factorial(n - r)
+        
     }
     pub fn get_queues(&self) -> Vec<Queue> {
          
@@ -436,9 +424,86 @@ impl Choose {
             inverse
         })
     }
+    /**
+     * Reorders the choose's pieces into TILJOSZ order. 
+     */
+    pub fn sort(&mut self) {
+        self.pieces.sort()
+    }
+    pub fn iter(&self) -> ChooseIterator<'_> {
+        ChooseIterator::new(self)
+    }
 }
 
+pub struct ChooseIterator<'a> {
+    choose: &'a Choose,
+    state: Vec<usize>,
+    c: usize,
+    first: bool
+}
+impl ExactSizeIterator for ChooseIterator<'_> {
+    fn len(&self) -> usize {
+        self.choose.size()
 
+    }
+}
+impl ChooseIterator<'_> {
+    pub fn new (choose: &Choose) -> ChooseIterator {
+        
+        ChooseIterator {
+            choose,
+            state: vec![0; choose.count],
+            c: 0,
+            first: true
+        }
+    }
+    fn idxs_to_queue(idxs: Vec<usize>, choose: Choose) -> Queue {
+        let mut choose = choose;
+        choose.sort();
+        let mut queue = Queue::new();
+        for idx in idxs {
+            queue.push(QueueNode {
+                node_type: QueueNodeType::Piece,
+                piece: Some(choose.pieces[idx]),
+                choose: None,
+                next: None
+            });
+            choose.pieces.remove(idx);
+        }
+        queue
+    }
+}
+impl<'a> Iterator for ChooseIterator<'a> {
+    type Item = Queue;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.choose.count == 0 {
+            None
+        } else if self.c >= self.len() {
+            
+            None
+        } else if self.first {
+            self.c += 1;
+            self.first = false;
+            return Some(ChooseIterator::idxs_to_queue(self.state.clone(), self.choose.clone()));
+        } else {
+            self.c += 1;
+            let mut stop_incr = false;
+            let mut idx = self.state.len() - 1;
+            while !stop_incr {
+                
+                self.state[idx] += 1;
+                if self.state[idx] < self.choose.pieces.len() - idx  {
+                    stop_incr = true;
+                } else {
+                    self.state[idx] = 0;
+                    idx -= 1;
+                }
+            }
+            return Some(ChooseIterator::idxs_to_queue(self.state.clone(), self.choose.clone()));
+        }
+        
+    }
+}
 impl fmt::Display for Choose {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut str = String::new();
@@ -553,3 +618,4 @@ impl Queue {
         Ok(queue)
     }
 }
+    
