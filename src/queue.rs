@@ -4,9 +4,9 @@ use wasm_bindgen::prelude::*;
 
 use crate::{math::{factorial, usize_factorial}, piece::{is_piece_color, piece_color_to_char, PieceColor, TetPiece}};
 use core::fmt;
-use std::{collections::HashSet, fmt::Write, iter};
+use std::{collections::{HashMap, HashSet}, fmt::Write, io::Cursor, iter::{self, Map}};
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum QueueNodeType {
     Choose,
     Piece
@@ -20,6 +20,12 @@ pub struct QueueNode {
     next: Option<Box<QueueNode>>
 }
 impl QueueNode {
+    pub fn choose(&self) -> &Choose {
+        self.choose.as_ref().unwrap()
+    }
+    pub fn piece(&self) -> &PieceColor {
+        self.piece.as_ref().unwrap()
+    }
     pub fn push_back(&mut self, node: QueueNode) {
         if let Some(next) = &self.next {
             let mut cur = self;
@@ -124,8 +130,8 @@ impl QueueNode {
             self
         }
     }
-    pub fn last_mut(&mut self) -> &mut QueueNode{
-        if self.next.is_some() {
+    pub fn last_mut(&mut self) -> &mut QueueNode {
+        if self.next.is_some() { 
             let mut cur = self;
             while cur.next.is_some() {
                 cur = cur.next.as_mut().unwrap();
@@ -133,6 +139,14 @@ impl QueueNode {
             cur
         } else {
             self
+        }
+    }
+    pub fn isolated_clone(&self) -> QueueNode {
+        QueueNode {
+            node_type: self.node_type.clone(),
+            choose: self.choose.clone(),
+            piece: self.piece.clone(),
+            next: None
         }
     }
     pub fn len(&self) -> usize {
@@ -148,8 +162,27 @@ impl QueueNode {
             1
         }
     }
+    pub fn iter(&self) -> QueueNodeIterator {
+        QueueNodeIterator { cur: Some(Box::new(self.clone())) }
+    }
 }
-
+impl fmt::Display for QueueNode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.node_type {
+            QueueNodeType::Choose => {
+                if let Some(choose) = &self.choose {
+                    write!(f, "{}", choose);
+                }
+            } 
+            QueueNodeType::Piece => {
+                if let Some(piece) = &self.piece {
+                    write!(f, "{}", piece_color_to_char(piece.clone()));
+                }
+            }
+        }
+        fmt::Result::Ok(())
+    }
+}
 impl From<PieceColor> for QueueNode { 
     fn from(color: PieceColor) -> Self {
         QueueNode {
@@ -157,6 +190,30 @@ impl From<PieceColor> for QueueNode {
             piece: Some(PieceColor::from(color)),
             choose: None,
             next: None
+        }
+    }
+}
+pub struct QueueNodeIterator {
+    cur: Option<Box<QueueNode>>
+}
+impl ExactSizeIterator for QueueNodeIterator {
+    fn len(&self) -> usize {
+        if self.cur.is_some() {
+            self.cur.as_ref().unwrap().len()
+        } else {
+            0
+        }
+    }
+}
+impl Iterator for QueueNodeIterator {
+    type Item = QueueNode;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(cur) = &self.cur {
+            let ret = cur.as_ref().clone();
+            self.cur = cur.next.clone();
+            Some(ret)
+        } else {
+            None
         }
     }
 }
@@ -190,6 +247,7 @@ impl Queue {
             panic!("Head node doesn't exist")
         }
     }
+    
 
 }
 impl Queue {
@@ -236,6 +294,87 @@ impl Queue {
             0
         }
     }
+    pub fn from_string(mut s: String) -> Result<Self, InvalidQueueFormatError> {
+        let mut base = Queue::new();
+        s.retain(|c| !c.is_whitespace());
+  
+        let mut idx = 0;
+        while idx < s.len() {
+            let mut c = s.chars().nth(idx).unwrap();
+            if c == '[' || c == '*' {
+                let mut pieces = Vec::new();
+                let mut inverse = false;
+                let mut count = 0;
+                if c == '[' {
+                    idx += 1;
+                    c = s.chars().nth(idx).unwrap();
+                    if c == '^' {
+                        inverse = true;
+                    }
+                    while s.chars().nth(idx).unwrap() != ']' {
+                        c = s.chars().nth(idx).unwrap();
+                        count += 1;
+                        if is_piece_color(c) {
+                            if pieces.contains(&PieceColor::from(c)) {
+                                return Err(InvalidQueueFormatError {  })
+                            } else {
+                                pieces.push(PieceColor::from(c));
+                                idx += 1;
+                            }
+                        } else {
+                            return Err(InvalidQueueFormatError {  })
+                        }
+                    }
+
+                } else if c == '*' {
+                    count = 7;
+                    pieces = Vec::from(crate::piece::get_pieces());
+                } else {
+                    return Err(InvalidQueueFormatError {  })
+                }
+                idx += 1;
+                c = s.chars().nth(idx).unwrap();
+                if c == 'p' {
+                    idx += 1;
+                    count = s.chars().nth(idx).unwrap().to_digit(10).unwrap() as usize;
+                    if count > pieces.len() {
+                        return Err(InvalidQueueFormatError {  })
+                    }
+                } else if c == '!' {
+                    count = count;
+                } else {
+                    return Err(InvalidQueueFormatError {  })
+                }
+                let choose = Choose {
+                    pieces,
+                    count,
+                    inverse
+                };
+                base.push(QueueNode {
+                    node_type: QueueNodeType::Choose,
+                    choose: Some(choose),
+                    piece: None,
+                    next: None
+                });
+                idx += 1;
+            } else if c == ',' {
+                idx += 1;
+            } else if is_piece_color(c) {
+                base.push(QueueNode {
+                    node_type: QueueNodeType::Piece,
+                    piece: Some(PieceColor::from(c)),
+                    choose: None,
+                    next: None
+                });
+                idx += 1;
+            }
+            
+        }
+        Ok(base)
+    }
+    pub fn iter(&self) -> QueueChooseIterator<'_> {
+        QueueChooseIterator::new(self)
+    }
 }
 impl fmt::Display for Queue { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -254,8 +393,13 @@ impl fmt::Display for Queue {
                         }
                     }
                     if i != self.len() - 1 {
-                        f.write_char(',');
-                        f.write_char(' ');
+                        if let Some(next) = head.at(i + 1).clone() {
+                            if next.node_type == QueueNodeType::Choose {
+                                f.write_char(',');
+
+                            }
+                        }
+                        
         
                     } 
                 }
@@ -265,6 +409,107 @@ impl fmt::Display for Queue {
 
         
         fmt::Result::Ok(())
+    }
+}
+pub struct QueueChooseIterator<'a> {
+    queue: &'a Queue,
+    chooses: Vec<Choose>,
+    choose_map: HashMap<usize, Choose>,
+    states: HashMap<usize, Vec<usize>>,
+    idxs: Vec<usize>,
+    c: u64
+}
+impl QueueChooseIterator<'_> {
+    pub fn new(queue: &Queue) -> QueueChooseIterator {
+        let mut iter = QueueChooseIterator {
+            queue,
+            chooses: Vec::new(),
+            choose_map: HashMap::new(),
+            states: HashMap::new(),
+            idxs: Vec::new(),
+            c: 0
+        };
+        let mut i = 0;
+        for node in queue.head().iter() {
+            match node.node_type {
+                QueueNodeType::Choose => { 
+                    iter.chooses.push(node.choose().clone());
+                    iter.choose_map.insert(i, node.choose().clone());
+                    iter.states.insert(i, vec![0; node.choose().count]);
+                    iter.idxs.push(i);
+                    
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+
+        iter
+
+    }
+    pub fn size(&self) -> u64 {
+        let mut base = 1;
+        for choose in self.chooses.iter() {
+            base *= choose.size() as u64;
+        }
+        base
+    }
+}
+
+impl Iterator for QueueChooseIterator<'_> { 
+    type Item = Queue;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.queue.len() == 0 || self.c >= self.size() {
+            return None;
+        }
+        if self.chooses.len() == 0 {
+            self.c += 1;
+            return Some(self.queue.clone());
+        }
+
+        if self.c != 0 {
+            let mut state_idx_idx = self.idxs.len() - 1;
+            let mut state_idx = &self.idxs[state_idx_idx];
+            let mut state = self.states.get_mut(state_idx).unwrap();
+            let mut choose = self.choose_map.get_mut(state_idx).unwrap();
+            let mut idx = state.len() - 1;
+            state[idx] += 1;
+            while state[idx] >= choose.pieces.len() - idx {
+                state[idx] = 0;
+                if idx != 0 {
+                    idx -= 1;
+                    state[idx] += 1
+                } else {
+                    state_idx_idx -= 1;
+                    state_idx = &self.idxs[state_idx_idx];
+                    state = self.states.get_mut(state_idx).unwrap();
+                    choose = self.choose_map.get_mut(state_idx).unwrap();
+                    idx = state.len() - 1;
+                    state[idx] += 1;
+                }
+
+            }
+        }
+        let mut base = Queue::new();
+            
+        for i in 0..self.queue.len() {
+            if let Some(node) = self.queue.head().at(i).clone() {
+                match node.node_type {
+                    QueueNodeType::Piece => {
+                        base.push(node.isolated_clone());
+                    } 
+                    QueueNodeType::Choose => {
+                        let mut q = ChooseIterator::idxs_to_queue(
+                            self.states.get(&i).unwrap().clone(),
+                            node.isolated_clone().choose().clone()
+                        );
+                        base.append(&mut q);
+                    }
+                }
+            }
+        }
+        self.c += 1;
+        Some(base)
     }
 }
 #[derive(Clone)]
