@@ -4,7 +4,7 @@ use ts_rs::TS;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
-#[derive(Clone, Copy, PartialEq, Debug, Eq, TS)]
+#[derive(Clone, Copy, PartialEq, Debug, Eq, TS, serde::Serialize, serde::Deserialize)]
 #[ts(export)]
 pub struct Vec2(pub i64, pub i64);
 impl Add<Vec2> for Vec2 { 

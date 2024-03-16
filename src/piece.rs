@@ -1,4 +1,5 @@
 
+use fumen::Piece;
 use js_sys::Number;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::convert::{FromWasmAbi, IntoWasmAbi, RefFromWasmAbi};
@@ -7,7 +8,7 @@ use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
 use ts_rs::TS;
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, TS)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, TS, serde::Serialize, serde::Deserialize, PartialOrd, Ord)]
 #[ts(export)]
 #[wasm_bindgen]
 pub enum PieceColor {
@@ -20,7 +21,9 @@ pub enum PieceColor {
     J=6,
     S=7
 }
-
+pub fn is_piece_color(c: char) -> bool {
+    c == 'I' || c == 'L' || c == 'O' || c == 'Z' || c == 'T' || c == 'J' || c == 'S'
+}
 
 #[wasm_bindgen(js_name = "pieceColorFromInt")]
 pub fn piece_color_from_int(int: u8) -> PieceColor {
@@ -52,8 +55,35 @@ pub fn piece_color_to_char(color: PieceColor) -> char {
 pub fn color_str(color: PieceColor, str: String) -> String {
     format!("{}{}{}", get_piece_color(color), str, get_blank())
 }   
+impl From<char> for PieceColor {
+    fn from(c: char) -> Self {
+        match c {
+            'I' => PieceColor::I,
+            'J' => PieceColor::J,
+            'L' => PieceColor::L,
+            'O' => PieceColor::O,
+            'T' => PieceColor::T,
+            'Z' => PieceColor::Z,
+            'S' => PieceColor::S,
+            _ => PieceColor::T
+        }
+    }   
+}
+pub fn piece_color_from_char(c: char) -> PieceColor {
+    match c { 
+        'I' => PieceColor::I,
+        'J' => PieceColor::J,
+        'L' => PieceColor::L,
+        'O' => PieceColor::O,
+        'T' => PieceColor::T,
+        'Z' => PieceColor::Z,
+        'S' => PieceColor::S,
+        _ => PieceColor::T
+        
+    }
+}
 #[wasm_bindgen]
-#[derive(PartialEq, Eq, Clone, Copy, TS)]
+#[derive(PartialEq, Eq, Clone, Copy, TS, serde::Serialize, serde::Deserialize)]
 #[ts(export)]
 pub enum Direction {
     North = 0,
@@ -168,8 +198,7 @@ static BLOCKS: [PieceMinos; 7] = [
 
 ];
 
-#[derive(Clone, Copy, TS)]
-#[ts(export)]
+#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[wasm_bindgen]
 pub struct TetPiece {
     pub color: PieceColor,

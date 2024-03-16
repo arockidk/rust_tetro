@@ -45,10 +45,63 @@ pub mod tests {
     }
     #[test]
     fn queue_test () {
-        let allp4 = choose(Vec::from(get_pieces()), 4);
-        for queue in allp4 {
-            println!("{}", queue)
+        let test_q = Queue::from_string("TILJSOZ".to_string());
+        assert!(test_q.is_ok());
+        let test_q = test_q.unwrap();
+        for piece in test_q.head().iter() {
+            println!("{}", piece);
         }
+    }
+    #[test]
+    fn choose_test() {
+        use crate::queue::QueueNode;
+        use crate::queue::Choose;
+        let allp4 = Queue::new();
+        let choose = Choose::from_string(
+            "*p4".to_string()
+        );
+        assert!(choose.is_ok());
+        let choose = choose.unwrap();
+        // println!("{:?} {} {}", choose.pieces, choose.count, choose.inverse);
+        assert_eq!(choose.to_string(), "*p4".to_string());
+        // let hill_1st_11 = Queue::from_string(
+        //     "ILSO,[TJZ]!,*p4".to_string()
+        // );
+        // assert!(hill_1st_11.is_ok());
+        // let hill_1st_11 = hill_1st_11.unwrap();
+        // // println!("{}", hill_1st_11.to_string());
+        // println!("{}", hill_1st_11.iter().size());
+        // let mut i = 1;
+        // for q in hill_1st_11.iter() {
+        //     println!("{} {}", i, q);
+        //     i += 1;
+        // }
+        let first_pc = Queue::from_string(
+            "*!,*p4".to_string()
+        );
+        assert!(first_pc.is_ok());
+        let first_pc = first_pc.unwrap();
+        // assert_eq!(first_pc.to_string(), "*p7,*p4".to_string());
+        let mut i = 1;
+        for q in first_pc.iter() {
+            println!("{}", i);
+            i += 1;
+        }
+        // let queues = choose.get_queues();
+        // assert_eq!(queues.len(), 840);
+        // for queue in queues {
+        //     println!("{}", queue);
+        // }
+        // for q in choose.iter() {
+        //     println!("{}", q);
+            
+        // }
+        // let hill_1st = Choose::from_string(String::from("[ILSO]!"));
+        // let mut hill_1st = hill_1st.unwrap();
+        // for q in hill_1st.iter() {
+        //     println!("{}", q);
+        // }
+
     }
     #[test]
     fn piece_test () {
