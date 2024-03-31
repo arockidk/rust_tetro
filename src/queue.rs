@@ -6,7 +6,8 @@ use crate::{math::{factorial, usize_factorial}, piece::{is_piece_color, piece_co
 use core::fmt;
 use std::{collections::{HashMap, HashSet}, fmt::Write, io::Cursor, iter::{self, Map}};
 
-#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[wasm_bindgen]
 pub enum QueueNodeType {
     Choose,
     Piece
@@ -14,7 +15,7 @@ pub enum QueueNodeType {
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 #[wasm_bindgen]
 pub struct QueueNode {
-    node_type: QueueNodeType,
+    pub node_type: QueueNodeType,
     choose: Option<Choose>,
     piece: Option<PieceColor>,
     next: Option<Box<QueueNode>>
@@ -164,6 +165,22 @@ impl QueueNode {
     }
     pub fn iter(&self) -> QueueNodeIterator {
         QueueNodeIterator { cur: Some(Box::new(self.clone())) }
+    }
+
+    pub fn next(&self) -> Box<QueueNode> {
+        self.next.unwrap()
+    }
+
+}
+impl QueueNode {
+    pub fn get_choose(&self) -> Option<Choose> {
+        self.choose
+    }
+    pub fn get_next(&self) -> Option<Box<QueueNode>> {
+        self.next
+    }
+    pub fn get_piece(&self) -> Option<PieceColor> {
+        self.piece
     }
 }
 impl fmt::Display for QueueNode {
@@ -373,7 +390,14 @@ impl Queue {
         }
         Ok(base)
     }
-    pub fn iter(&self) -> QueueChooseIterator<'_> {
+    pub fn iter(&self) -> QueueNodeIterator {
+        if let Some(head) = self.head {
+            head.iter()
+        } else {
+            panic!()
+        }
+    }
+    pub fn possible_q_iter(&self) -> QueueChooseIterator<'_> {
         QueueChooseIterator::new(self)
     }
 }
