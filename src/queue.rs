@@ -168,16 +168,16 @@ impl QueueNode {
     }
 
     pub fn next(&self) -> Box<QueueNode> {
-        self.next.unwrap()
+        self.next.clone().unwrap()
     }
 
 }
 impl QueueNode {
     pub fn get_choose(&self) -> Option<Choose> {
-        self.choose
+        self.choose.clone()
     }
     pub fn get_next(&self) -> Option<Box<QueueNode>> {
-        self.next
+        self.next.clone()
     }
     pub fn get_piece(&self) -> Option<PieceColor> {
         self.piece
@@ -391,7 +391,7 @@ impl Queue {
         Ok(base)
     }
     pub fn iter(&self) -> QueueNodeIterator {
-        if let Some(head) = self.head {
+        if let Some(head) = &self.head {
             head.iter()
         } else {
             panic!()

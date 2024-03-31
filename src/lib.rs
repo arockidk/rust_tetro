@@ -84,7 +84,7 @@ pub mod tests {
         let first_pc = ilsz.unwrap();
         // assert_eq!(first_pc.to_string(), "*p7,*p4".to_string());
         let mut i = 1;
-        for q in first_pc.iter() {
+        for q in first_pc.possible_q_iter() {
             println!("{}", i);  
             i += 1;
         }
