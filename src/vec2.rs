@@ -1,12 +1,15 @@
 use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
 use wasm_bindgen::convert::IntoWasmAbi;
-use ts_rs::TS;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
-#[derive(Clone, Copy, PartialEq, Debug, Eq, TS, serde::Serialize, serde::Deserialize)]
-#[ts(export)]
+#[derive(Clone, Copy, PartialEq, Debug, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Vec2(pub i64, pub i64);
+impl Vec2 {
+    pub fn to_usize(&self) -> (usize, usize) {
+        (self.0.try_into().unwrap(), self.1.try_into().unwrap())
+    }
+}
 impl Add<Vec2> for Vec2 { 
     type Output = Vec2; 
     fn add(self, rhs: Vec2) -> Self::Output {

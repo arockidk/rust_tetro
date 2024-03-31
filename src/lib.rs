@@ -14,6 +14,7 @@ pub mod pc_utils;
 pub mod gameplay;
 #[cfg(test)]
 pub mod tests {
+    use crate::board::Board;
     use crate::field;
     use crate::board;
     use crate::piece::get_pieces;
@@ -34,7 +35,7 @@ pub mod tests {
         let page = pco.add_page_rs();
         
         
-        page.set_field(field::Field { board: board::Board::from_4h_array([
+        page.set_field(field::Field { board: board::TetBoard::from_4h_array([
             8,8,0,0,0,0,0,8,8,8,
             8,8,8,0,0,0,0,8,8,8,
             8,8,8,8,0,0,0,8,8,8,
@@ -76,15 +77,15 @@ pub mod tests {
         //     println!("{} {}", i, q);
         //     i += 1;
         // }
-        let first_pc = Queue::from_string(
-            "*!,*p4".to_string()
+        let ilsz = Queue::from_string(
+            "ILSZ,[^ILSZ]!,*p4".to_string()
         );
-        assert!(first_pc.is_ok());
-        let first_pc = first_pc.unwrap();
+        assert!(ilsz.is_ok());
+        let first_pc = ilsz.unwrap();
         // assert_eq!(first_pc.to_string(), "*p7,*p4".to_string());
         let mut i = 1;
         for q in first_pc.iter() {
-            println!("{}", i);
+            println!("{}", i);  
             i += 1;
         }
         // let queues = choose.get_queues();
@@ -128,7 +129,7 @@ pub mod tests {
     }
     #[test]
     fn collision_test () {
-        let board = board::Board::new();
+        let board = board::TetBoard::new();
         let mut p = piece::TetPiece::new(
             piece::PieceColor::I,
             piece::Direction::North,
@@ -139,7 +140,7 @@ pub mod tests {
     #[test]
     fn das_test() {
         let mut i = piece::TetPiece::new(PieceColor::I, Direction::North, Vec2(4,20));
-        let mut f = field::Field::new(board::Board::new(), Some(i));
+        let mut f = field::Field::new(board::TetBoard::new(), Some(i));
         f.das_piece(Direction::East);
         f.das_piece(Direction::South);
         print!("{}", f);
@@ -149,7 +150,7 @@ pub mod tests {
     #[test]
     fn rotation_test () {
         let s = piece::TetPiece::new(PieceColor::S, Direction::North, Vec2(4,20));
-        let mut standard_s_kick = field::Field::new(board::Board::from_4h_array([
+        let mut standard_s_kick = field::Field::new(board::TetBoard::from_4h_array([
             0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0,0,0,0,0,
             8,8,8,8,8,0,0,8,8,8,
@@ -189,7 +190,7 @@ pub mod tests {
     fn pc_test() {
         use crate::pc_utils::u64_board;
         let mut board = u64_board::new();
-        board.set_tile(4, 2, true);
+        board.set_tile(4, 2, 1);
         println!("{}", board);
         let mut t = piece::TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
         assert_eq!(board.does_collide(t), true);

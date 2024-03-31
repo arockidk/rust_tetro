@@ -3,7 +3,7 @@ use std::collections::LinkedList;
 use fumen::{CellColor, Piece, PieceType, RotationState};
 use wasm_bindgen::{convert::FromWasmAbi, prelude::wasm_bindgen};
 
-use crate::{board::Board, field::Field, piece::{Direction, PieceColor}, vec2::Vec2};
+use crate::{board::{Board, TetBoard}, field::Field, piece::{Direction, PieceColor}, vec2::Vec2};
 #[derive(Clone)]
 
 #[wasm_bindgen]
@@ -98,7 +98,7 @@ fn direction_to_rotation_state(dir: Direction) -> RotationState {
 impl std::default::Default for TetPage {
     fn default() -> Self {
         TetPage {
-            field: Field::new(Board::new(), None),
+            field: Field::new(TetBoard::new(), None),
             rise: false,
             lock: true,
             mirror: false,
@@ -223,7 +223,7 @@ impl TetPage  {
     }
     pub fn from_fumen_page(pg: fumen::Page) -> TetPage {
         TetPage { 
-            field: Field::new(Board::new(), None),
+            field: Field::new(TetBoard::new(), None),
             rise: pg.rise,
             lock: pg.lock,
             mirror: pg.mirror,

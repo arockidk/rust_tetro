@@ -310,6 +310,7 @@ impl Queue {
                     c = s.chars().nth(idx).unwrap();
                     if c == '^' {
                         inverse = true;
+                        
                     }
                     while s.chars().nth(idx).unwrap() != ']' {
                         c = s.chars().nth(idx).unwrap();

@@ -11,5 +11,4 @@ fumen = {git = "https://github.com/arockidk/fumen-rs.git"}
 js-sys = "0.3.68"
 serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.4"
-ts-rs = "7.1.1"
 wasm-bindgen = "0.2"

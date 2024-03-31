@@ -2,13 +2,13 @@ use fumen;
 use std::fmt::{self, Write};
 
 use wasm_bindgen::prelude::*;
-use crate::{board::Board, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, TetPiece, PieceColor, PieceMinos}, vec2::Vec2};
+use crate::{board::{Board, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 
 pub struct Field {
-    pub board: Board,
+    pub board: TetBoard,
     pub active_piece: Option<TetPiece>
 
 }
@@ -17,7 +17,7 @@ pub struct Field {
 #[wasm_bindgen]
 impl Field {
     #[wasm_bindgen(constructor)]
-    pub fn new(board: Board, active_piece: Option<TetPiece>) -> Field {
+    pub fn new(board: TetBoard, active_piece: Option<TetPiece>) -> Field {
         Field {board: board, active_piece: active_piece}
         
     }

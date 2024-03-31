@@ -6,10 +6,8 @@ use wasm_bindgen::convert::{FromWasmAbi, IntoWasmAbi, RefFromWasmAbi};
 use core::fmt;
 use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
-use ts_rs::TS;
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, TS, serde::Serialize, serde::Deserialize, PartialOrd, Ord)]
-#[ts(export)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, serde::Serialize, serde::Deserialize, PartialOrd, Ord)]
 #[wasm_bindgen]
 pub enum PieceColor {
     B=0,
@@ -83,8 +81,7 @@ pub fn piece_color_from_char(c: char) -> PieceColor {
     }
 }
 #[wasm_bindgen]
-#[derive(PartialEq, Eq, Clone, Copy, TS, serde::Serialize, serde::Deserialize)]
-#[ts(export)]
+#[derive(PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum Direction {
     North = 0,
     East = 1,
