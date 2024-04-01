@@ -1,8 +1,9 @@
 mod u64_board_mod;
 use std::any::Any;
 
-use crate::queue;
-use crate::piece::PieceColor;
+use crate::board::TetBoard;
+use crate::{piece, queue};
+use crate::piece::{TetPiece, PieceColor};
 impl Queue {
     /**
      * Get columnar parity without T pieces.
@@ -46,5 +47,9 @@ impl Queue {
     }
 }
 pub use u64_board_mod::u64_board;
-
+impl TetBoard {
+    pub fn get_piece_placements(&self, mut piece: TetPiece, height: u8) {
+        piece.position.1 = (height - 1) as i64;
+    }
+}
 use crate::queue::Queue;
