@@ -1,3 +1,4 @@
+use core::fmt;
 use std::cell::Cell;
 use std::collections::LinkedList;
 use fumen::{CellColor, Piece, PieceType, RotationState};
@@ -15,6 +16,7 @@ pub struct TetPage {
     pub mirror: bool,
     comment: Option<String>
 } 
+#[derive(Clone)]
 #[wasm_bindgen()]
 pub struct TetFumen {
     pages: Vec<TetPage>,
@@ -180,19 +182,20 @@ impl TetPage  {
             
         }
     }
-    #[wasm_bindgen(setter)]
+
     pub fn set_field(&mut self, field: Field) {
         let mut inversed_field: Field = field;
 
         for y in 0..24 {
             for x in 0..10 {
+                // println!("{}", x);
                 inversed_field.board.set_tile(x, y, field.board.get_tile(x, 23 - y));
                 
             }
         }
-        println!("{}", field);
-        println!("{}", inversed_field);
-        self.field = inversed_field;
+        // println!("{}", field);
+        // println!("{}", inversed_field);
+        self.field = field;
         self.fumen_page.set_field_rs(inversed_field.board.get_tile_matrix().map(
             |v| v.map(|c| u8_to_cell_color(c))
         )[1..24].try_into().unwrap());
@@ -222,25 +225,49 @@ impl TetPage  {
         self.comment.clone()
     }
     pub fn from_fumen_page(pg: fumen::Page) -> TetPage {
-        TetPage { 
+        let mut new_pg = TetPage { 
             field: Field::new(TetBoard::new(), None),
             rise: pg.rise,
             lock: pg.lock,
             mirror: pg.mirror,
             comment: pg.get_comment().clone(),
-            fumen_page: pg,
+            fumen_page: pg.clone(),
+        };
+        for y in 0..24 {
+            for x in 0..10 {
+                if y == 0 {
+                    new_pg.field.board.set_tile(x, y, pg.get_garbage_row()[x as usize] as u8)
+                } else {
+                    new_pg.field.board.set_tile(x, y, pg.get_field()[23 - y as usize][x as usize] as u8)
+                }
+            }
         }
+        new_pg 
     }
 }
 impl TetPage {
-    pub fn get_field(&mut self) -> &mut Field {
+    pub fn get_field(&self) -> &Field {
+        &self.field   
+    }
+    pub fn get_comment(&self) -> &Option<String> {
+        &self.comment
+    }
+    pub fn get_fumen_page(&self) -> &fumen::Page {
+        &self.fumen_page
+    }
+    pub fn get_field_mut(&mut self) -> &mut Field {
         &mut self.field   
     }
-    pub fn get_comment(&mut self) -> &mut Option<String> {
+    pub fn get_comment_mut(&mut self) -> &mut Option<String> {
         &mut self.comment
     }
-    pub fn get_fumen_page(&mut self) -> &mut fumen::Page {
+    pub fn get_fumen_page_mut(&mut self) -> &mut fumen::Page {
         &mut self.fumen_page
+    }
+}
+impl fmt::Display for TetPage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.field.to_string().as_str())
     }
 }
 #[wasm_bindgen]
@@ -268,9 +295,13 @@ impl TetFumen {
         }
     }
     #[wasm_bindgen(js_name = "encodeFumen")]
-    pub fn encode_fumen(&mut self) -> String { 
-        self.update();
-        return self.fumen.encode();
+    pub fn encode_fumen(&self) -> String { 
+        let mut clne = self.clone();
+        clne.update();
+        return clne.encode();
+    }
+    fn encode(&self) -> String {
+        self.fumen.encode()
     }
     #[wasm_bindgen(js_name = "decodeFumen")]
     pub fn decode_fumen(&mut self, fumen: String) {
@@ -282,6 +313,10 @@ impl TetFumen {
         }
         
     }
+    #[wasm_bindgen(js_name = "getPageAt")]
+    pub fn js_get_page_at(&self, idx: usize) -> *const TetPage {
+        &self.pages[idx]
+    }
 
 }
 impl TetFumen {
@@ -290,5 +325,11 @@ impl TetFumen {
         self.pages.push(page.clone());
         self.pages.last_mut().unwrap()
         
+    }
+    pub fn get_page_at(&self, idx: usize) -> &TetPage {
+        &self.pages[idx]
+    }
+    pub fn get_page_at_mut(&mut self, idx: usize) -> &mut TetPage {
+        &mut self.pages[idx]
     }
 }

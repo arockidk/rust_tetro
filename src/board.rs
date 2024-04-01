@@ -49,7 +49,7 @@ impl Board for TetBoard {
         
             tiles: arr
         };
-
+        // println!("{}", new_board);
         return new_board;
     }
     fn from_4h_array(arr: [u8; 40]) -> TetBoard {
@@ -57,6 +57,7 @@ impl Board for TetBoard {
         tiles[..=189].copy_from_slice(&[0; 190]);
         tiles[190..=229].copy_from_slice(&arr);
         tiles[230..].copy_from_slice(&[0; 10]);
+
         return TetBoard::from_int_array(tiles);
     } 
     fn tile_occupied(&self, x: isize, y: isize) -> bool {
@@ -64,7 +65,7 @@ impl Board for TetBoard {
     }
 
     fn set_tile(&mut self, x: isize, y: isize, new: u8) {
-        if x > 0 && y > 0 {
+        if x > -1 && y > -1 {
             let x = x as usize;
             let y = y as usize;
             self.tiles[y * 10 + x] = new;
@@ -149,10 +150,10 @@ impl Board for TetBoard {
             
         } else  {
             let kicks = get_kicks(*piece);
-            // println!("Starting kicks, start rotation: {}, new rotation: {}", old_rot, new_rot);
-            // println!("Raw minos of new rotation vs old: {:?} {:?}", test_piece.get_raw_minos(), piece.get_raw_minos());
-            // println!("Actual minos of new rotation vs old: {:?} {:?}", test_piece.get_minos(), piece.get_minos());
-            // println!("Applied minos for new rotation\n{}", field::Field::new(*self, test_piece));
+            println!("Starting kicks, start rotation: {}, new rotation: {}", old_rot, new_rot);
+            println!("Raw minos of new rotation vs old: {:?} {:?}", test_piece.get_raw_minos(), piece.get_raw_minos());
+            println!("Actual minos of new rotation vs old: {:?} {:?}", test_piece.get_minos(), piece.get_minos());
+            println!("Applied minos for new rotation\n{}", field::Field::new(*self, Some(test_piece)));
             let mut passed_tests = true;
             for i in 0..5 { 
                 let old_offset = kicks[old_rot][i];
@@ -161,11 +162,11 @@ impl Board for TetBoard {
                 let shift: Vec2 = kicks[old_rot][i] - kicks[new_rot as usize][i];
                 test_piece.position += shift;
                 
-                // print!("===========NEW ROT===========\n");
-                // println!("Old offset: {:?}, New offset: {:?}", old_offset, new_offset);
-                // println!("Attempting to rotate with offset {:?}", shift);
-                // println!("{:?}", Vec2(10,23) - test_piece.position);
-                // println!("{}", field::Field::new(*self, test_piece));
+                print!("===========NEW ROT===========\n");
+                println!("Old offset: {:?}, New offset: {:?}", old_offset, new_offset);
+                println!("Attempting to rotate with offset {:?}", shift);
+                println!("{:?}", Vec2(10,23) - test_piece.position);
+                println!("{}", field::Field::new(*self, Some(test_piece)));
                 if self.does_collide(test_piece) {
                     test_piece.position -= shift;
                     passed_tests = false;

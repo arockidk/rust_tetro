@@ -81,7 +81,7 @@ pub fn piece_color_from_char(c: char) -> PieceColor {
     }
 }
 #[wasm_bindgen]
-#[derive(PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize, Debug)]
 pub enum Direction {
     North = 0,
     East = 1,

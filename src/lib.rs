@@ -14,6 +14,8 @@ pub mod pc_utils;
 pub mod gameplay;
 #[cfg(test)]
 pub mod tests {
+    use fumen::RotationState;
+
     use crate::board::Board;
     use crate::field;
     use crate::board;
@@ -31,18 +33,33 @@ pub mod tests {
 
     #[test]
     fn fumen_test() {
-        let mut pco = crate::fumen::TetFumen::new();
-        let page = pco.add_page_rs();
+        {
+            let mut pco = crate::fumen::TetFumen::new();
+            let page = pco.add_page_rs();
+            page.set_field(field::Field { board: board::TetBoard::from_4h_array([
+                8,8,0,0,0,0,0,8,8,8,
+                8,8,8,0,0,0,0,8,8,8,
+                8,8,8,8,0,0,0,8,8,8,
+                8,8,8,0,0,0,0,8,8,8
+            ]), active_piece: None });
+            println!("{}", page);
+            let encoded_fumen = pco.encode_fumen();
+            println!("{}", encoded_fumen);
+            unsafe {
+                println!("{:?}", pco.get_page_at(0).get_field().board.get_tile_matrix())
+            }
+        }
+        // {
+        //     let mut ms2 = TetFumen::new();
+        //     ms2.decode_fumen("v115@VghlGewhhlGewhhlh0Eewhhlg0DeR4xhQ4g0AeBtR4?RpwhR4BeBtwwRpwhg0Q4AeBtxwRpwhi0AeBtwwRpJeAgH".to_string());
+        //     println!("{}", ms2.get_page_at(0));
+        //     let encoded = ms2.encode_fumen();
+        //     println!("{}", encoded);
+        //     ms2.decode_fumen(encoded);
+        //     println!("{}", ms2.get_page_at(0));
+        // }
+
         
-        
-        page.set_field(field::Field { board: board::TetBoard::from_4h_array([
-            8,8,0,0,0,0,0,8,8,8,
-            8,8,8,0,0,0,0,8,8,8,
-            8,8,8,8,0,0,0,8,8,8,
-            8,8,8,0,0,0,0,8,8,8
-        ]), active_piece: None });
-        let encoded_fumen = pco.encode_fumen();
-        println!("{}", encoded_fumen);
     }
     #[test]
     fn queue_test () {
@@ -143,9 +160,10 @@ pub mod tests {
         let mut f = field::Field::new(board::TetBoard::new(), Some(i));
         f.das_piece(Direction::East);
         f.das_piece(Direction::South);
-        print!("{}", f);
+        println!("{}", f);
         f.rotate_piece(1);
-        print!("{}", f);
+        assert_eq!(f.active_piece.unwrap().rotation, Direction::East);
+        println!("{}", f);
     }
     #[test]
     fn rotation_test () {

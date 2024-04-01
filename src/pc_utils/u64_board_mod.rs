@@ -15,6 +15,9 @@ impl u64_board {
     pub fn in_6h_bounds(&self, position: Vec2) -> bool {
         position.0 >= 0 && position.0 < 10 && position.1 >= 0 && position.1 < 6
     }
+    pub fn in_bounds(&self, position: Vec2) -> bool {
+        position.0 >= 0 && position.0 < 10 && position.1 >= 0 && position.1 < 24
+    }
     
     pub fn get_piece_color(&self) -> PieceColor {
         piece_color_from_int((self.0 & 15) as u8)

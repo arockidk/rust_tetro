@@ -21,6 +21,8 @@ impl Field {
         Field {board: board, active_piece: active_piece}
         
     }
+    
+
     #[wasm_bindgen(js_name = canPlaceActivePiece)]
     pub fn can_place_active_piece(self: &Field) -> bool { 
         match self.active_piece {
@@ -44,8 +46,8 @@ impl Field {
     #[wasm_bindgen(js_name = rotatePiece)]
     pub fn rotate_piece(&mut self, rotation: u8) {
         match self.active_piece {
-            Some(mut p) => {
-                self.board.rotate_piece(&mut p, rotation);
+            Some(ref mut p) => {
+                self.board.rotate_piece(p, rotation);
             }
             None => ()
         }
