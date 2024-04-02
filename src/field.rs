@@ -1,4 +1,4 @@
-use fumen;
+
 use std::fmt::{self, Write};
 
 use wasm_bindgen::prelude::*;
@@ -9,16 +9,16 @@ use crate::{board::{Board, TetBoard}, piece::{self, color_str, piece_color_from_
 
 pub struct Field {
     pub board: TetBoard,
-    pub active_piece: Option<TetPiece>
-
+    pub active_piece: Option<TetPiece>,
+    pub hold: Option<TetPiece>
 }
 
 
 #[wasm_bindgen]
 impl Field {
     #[wasm_bindgen(constructor)]
-    pub fn new(board: TetBoard, active_piece: Option<TetPiece>) -> Field {
-        Field {board: board, active_piece: active_piece}
+    pub fn new(board: TetBoard, active_piece: Option<TetPiece>, hold: Option<TetPiece>) -> Field {
+        Field {board, active_piece, hold}
         
     }
     
@@ -35,8 +35,8 @@ impl Field {
     #[wasm_bindgen(js_name = dasPiece)]
     pub fn das_piece(&mut self, direction: Direction){
         match self.active_piece {
-            Some(mut p) => {
-                self.board.das_piece(&mut p, direction);
+            Some(ref mut p) => {
+                self.board.das_piece(p, direction);
             }
             None => ()
         }

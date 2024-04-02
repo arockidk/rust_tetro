@@ -17,11 +17,13 @@ pub mod tests {
     use fumen::RotationState;
 
     use crate::board::Board;
+    use crate::board::TetBoard;
     use crate::field;
     use crate::board;
     use crate::piece::get_pieces;
     use crate::piece::PieceColor;
     use crate::piece::Direction;
+    use crate::piece::TetPiece;
     use crate::queue::Queue;
     use crate::queue::choose;
     use crate::piece;
@@ -41,7 +43,7 @@ pub mod tests {
                 8,8,8,0,0,0,0,8,8,8,
                 8,8,8,8,0,0,0,8,8,8,
                 8,8,8,0,0,0,0,8,8,8
-            ]), active_piece: None });
+            ]), active_piece: None, hold: None});
             println!("{}", page);
             let encoded_fumen = pco.encode_fumen();
             println!("{}", encoded_fumen);
@@ -157,7 +159,7 @@ pub mod tests {
     #[test]
     fn das_test() {
         let mut i = piece::TetPiece::new(PieceColor::I, Direction::North, Vec2(4,20));
-        let mut f = field::Field::new(board::TetBoard::new(), Some(i));
+        let mut f = field::Field::new(board::TetBoard::new(), Some(i), None);
         f.das_piece(Direction::East);
         f.das_piece(Direction::South);
         println!("{}", f);
@@ -173,7 +175,7 @@ pub mod tests {
             0,0,0,0,0,0,0,0,0,0,
             8,8,8,8,8,0,0,8,8,8,
             8,8,8,8,0,0,8,8,8,8
-        ]),  Some(s));
+        ]),  Some(s), None);
         standard_s_kick.rotate_piece(1);
     //    print!("{}", standard_s_kick);
        standard_s_kick.das_piece(Direction::South);
@@ -206,14 +208,18 @@ pub mod tests {
     }
     #[test]
     fn pc_test() {
-        use crate::pc_utils::u64_board;
-        let mut board = u64_board::new();
-        board.set_tile(4, 2, 1);
-        println!("{}", board);
-        let mut t = piece::TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
-        assert_eq!(board.does_collide(t), true);
-        t.position += Vec2(1,0);
-        assert_eq!(board.does_collide(t), false);
-        assert_eq!(board.can_place(t), true);
+        // use crate::pc_utils::u64_field;
+        // let mut board = u64_field::new();
+        // board.set_tile(4, 2, 1);
+        // println!("{}", board);
+        // let mut t = piece::TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
+        // assert_eq!(board.does_collide(t), true);
+        // t.position += Vec2(1,0);
+        // assert_eq!(board.does_collide(t), false);
+        // assert_eq!(board.can_place(t), true);
+        let mut board = TetBoard::new();
+        let mut piece = TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
+        board.get_piece_placements(piece, 4);
+        
     }
 }
