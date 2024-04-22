@@ -1,9 +1,10 @@
-mod u64_board_mod;
+mod u64field;
 use std::any::Any;
 
-use crate::board::TetBoard;
+use crate::board::{Board, TetBoard};
+use crate::field::Field;
 use crate::{piece, queue};
-use crate::piece::{TetPiece, PieceColor};
+use crate::piece::{Direction, PieceColor, TetPiece};
 impl Queue {
     /**
      * Get columnar parity without T pieces.
@@ -46,10 +47,18 @@ impl Queue {
         count
     }
 }
-pub use u64_board_mod::u64_board;
+pub use u64field::u64_field;
+pub struct PiecePos(u8, u8, Direction);
 impl TetBoard {
-    pub fn get_piece_placements(&self, mut piece: TetPiece, height: u8) {
-        piece.position.1 = (height - 1) as i64;
+    pub fn get_piece_placements(&self, mut piece: TetPiece, height: u8) -> Vec<PiecePos> {
+        let mut placements = Vec::new();
+        piece.position.1 = (height) as i64;
+        piece.position.0 = 1;
+        self.das_piece(&mut piece, Direction::South);
+        println!("{}", Field::new(self.clone(), Some(piece), None));
+        
+        placements
+
     }
 }
 use crate::queue::Queue;

@@ -21,6 +21,18 @@ pub struct QueueNode {
     next: Option<Box<QueueNode>>
 }
 impl QueueNode {
+    pub fn new(node_type: QueueNodeType,
+        choose: Option<Choose>,
+        piece: Option<PieceColor>,
+        next: Option<Box<QueueNode>>
+    ) -> QueueNode {
+        QueueNode {
+            node_type,
+            choose,
+            piece,
+            next
+        }
+    }
     pub fn choose(&self) -> &Choose {
         self.choose.as_ref().unwrap()
     }

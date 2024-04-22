@@ -100,7 +100,7 @@ fn direction_to_rotation_state(dir: Direction) -> RotationState {
 impl std::default::Default for TetPage {
     fn default() -> Self {
         TetPage {
-            field: Field::new(TetBoard::new(), None),
+            field: Field::new(TetBoard::new(), None, None),
             rise: false,
             lock: true,
             mirror: false,
@@ -226,7 +226,7 @@ impl TetPage  {
     }
     pub fn from_fumen_page(pg: fumen::Page) -> TetPage {
         let mut new_pg = TetPage { 
-            field: Field::new(TetBoard::new(), None),
+            field: Field::new(TetBoard::new(), None, None),
             rise: pg.rise,
             lock: pg.lock,
             mirror: pg.mirror,

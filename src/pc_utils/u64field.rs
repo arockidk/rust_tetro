@@ -23,9 +23,11 @@ impl u64_field {
         if is_6h {
             
             
+            
         } else {
 
         }
+        u64_field(new_field) 
     }
     pub fn new(board: TetBoard, active: Option<TetPiece>, hold: Option<TetPiece>) -> u64_field {
         u64_field(0)

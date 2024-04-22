@@ -9,9 +9,9 @@ use crate::{kicks::get_180_kicks, piece::TetPiece};
 use crate::vec2::Vec2;
 
 pub trait Board {
-    fn get_tile_array(self: &Self) -> [u8; 240];
-    fn get_tile_matrix(self: &Self) -> [[u8; 10]; 24];
-    fn from_int_array(arr: [u8; 240]) -> Self;
+    fn get_tile_array(self: &Self) -> [u8; 200];
+    fn get_tile_matrix(self: &Self) -> [[u8; 10]; 20];
+    fn from_int_array(arr: [u8; 200]) -> Self;
     fn from_4h_array(arr: [u8; 40]) -> Self;
     fn tile_occupied(&self, x: isize, y: isize) -> bool;
     fn in_bounds(&self, position: Vec2) -> bool;
@@ -27,24 +27,24 @@ pub trait Board {
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 pub struct TetBoard {
-    tiles: [u8; 240]
+    tiles: [u8; 200]
 }
 
 impl Board for TetBoard {
     
-    fn get_tile_array(self: &TetBoard) -> [u8; 240] {
+    fn get_tile_array(self: &TetBoard) -> [u8; 200] {
         return self.tiles;
     }
-    fn get_tile_matrix(self: &TetBoard) -> [[u8; 10]; 24] {
-        let mut matrix: [[u8; 10]; 24] = [[0; 10]; 24];
-        for y in 0..24 {
+    fn get_tile_matrix(self: &TetBoard) -> [[u8; 10]; 20] {
+        let mut matrix: [[u8; 10]; 20] = [[0; 10]; 20];
+        for y in 0..20 {
             for x in 0..10 {
                 matrix[y][x] = self.get_tile(x.try_into().unwrap(), y.try_into().unwrap());
             }
         }
         return matrix;
     }
-    fn from_int_array(arr: [u8; 240]) -> TetBoard {
+    fn from_int_array(arr: [u8; 200]) -> TetBoard {
         let new_board = TetBoard { 
         
             tiles: arr
@@ -53,10 +53,9 @@ impl Board for TetBoard {
         return new_board;
     }
     fn from_4h_array(arr: [u8; 40]) -> TetBoard {
-        let mut tiles: [u8; 240] = [0; 240];
-        tiles[..=189].copy_from_slice(&[0; 190]);
-        tiles[190..=229].copy_from_slice(&arr);
-        tiles[230..].copy_from_slice(&[0; 10]);
+        let mut tiles: [u8; 200] = [0; 200];
+        tiles[..=159].copy_from_slice(&[0; 160]);
+        tiles[160..200].copy_from_slice(&arr);
 
         return TetBoard::from_int_array(tiles);
     } 
@@ -72,7 +71,7 @@ impl Board for TetBoard {
         }
         
     }
-
+    
     fn get_tile(&self, x: isize, y: isize) -> u8 {
         let pos = Vec2(x.try_into().unwrap(), y.try_into().unwrap());
         // print!("{:?}", pos);
@@ -123,7 +122,7 @@ impl Board for TetBoard {
 
     }
     fn in_bounds(&self, pos: Vec2) -> bool { 
-        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24
+        return pos.0 > -1 && pos.0 < 10 && pos.1 > 0 && pos.1 < 20
     }
     fn rotate_piece(&self , piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
@@ -150,10 +149,10 @@ impl Board for TetBoard {
             
         } else  {
             let kicks = get_kicks(*piece);
-            println!("Starting kicks, start rotation: {}, new rotation: {}", old_rot, new_rot);
-            println!("Raw minos of new rotation vs old: {:?} {:?}", test_piece.get_raw_minos(), piece.get_raw_minos());
-            println!("Actual minos of new rotation vs old: {:?} {:?}", test_piece.get_minos(), piece.get_minos());
-            println!("Applied minos for new rotation\n{}", field::Field::new(*self, Some(test_piece)));
+            // println!("Starting kicks, start rotation: {}, new rotation: {}", old_rot, new_rot);
+            // println!("Raw minos of new rotation vs old: {:?} {:?}", test_piece.get_raw_minos(), piece.get_raw_minos());
+            // println!("Actual minos of new rotation vs old: {:?} {:?}", test_piece.get_minos(), piece.get_minos());
+            // println!("Applied minos for new rotation\n{}", field::Field::new(*self, Some(test_piece)));
             let mut passed_tests = true;
             for i in 0..5 { 
                 let old_offset = kicks[old_rot][i];
@@ -162,11 +161,11 @@ impl Board for TetBoard {
                 let shift: Vec2 = kicks[old_rot][i] - kicks[new_rot as usize][i];
                 test_piece.position += shift;
                 
-                print!("===========NEW ROT===========\n");
-                println!("Old offset: {:?}, New offset: {:?}", old_offset, new_offset);
-                println!("Attempting to rotate with offset {:?}", shift);
-                println!("{:?}", Vec2(10,23) - test_piece.position);
-                println!("{}", field::Field::new(*self, Some(test_piece)));
+                // print!("===========NEW ROT===========\n");
+                // println!("Old offset: {:?}, New offset: {:?}", old_offset, new_offset);
+                // println!("Attempting to rotate with offset {:?}", shift);
+                // println!("{:?}", Vec2(10,23) - test_piece.position);
+                // println!("{}", field::Field::new(*self, Some(test_piece)));
                 if self.does_collide(test_piece) {
                     test_piece.position -= shift;
                     passed_tests = false;
@@ -240,7 +239,7 @@ impl TetBoard {
         
         let new_board = TetBoard { 
            
-            tiles: [0; 240]
+            tiles: [0; 200]
 
         };
 
@@ -276,7 +275,7 @@ impl TetBoard {
     }
     #[wasm_bindgen(js_name = from4hArray)]
     pub fn js_from_4h_array(arr: Uint8Array) -> TetBoard {
-        let mut tiles: [u8; 240] = [0; 240];
+        let mut tiles: [u8; 200] = [0; 200];
         tiles[..=189].copy_from_slice(&[0; 190]);
         tiles[190..=229].copy_from_slice(arr.to_vec().as_slice().try_into().unwrap());
         tiles[230..].copy_from_slice(&[0; 10]);
@@ -315,7 +314,7 @@ impl TetBoard {
     }
     #[wasm_bindgen(js_name = inBounds)]
     pub fn js_in_bounds(&self, pos: Vec2) -> bool { 
-        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24
+        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 20
     }
     #[wasm_bindgen(js_name = rotatePiece)]
     pub fn js_rotate_piece(&self , piece: &mut TetPiece, rotation: u8) -> bool {
@@ -423,7 +422,7 @@ impl TetBoard {
 }
 impl Display for TetBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..24 {
+        for i in 0..20 {
             for j in 0..10 {
                 let tile = self.tiles[i * 10 + j];
                 let tile_color = piece_color_from_int(tile);
