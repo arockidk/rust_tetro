@@ -7,17 +7,17 @@ pub type KickData180 = [[Vec2; 2]; 4];
 // Kicks, comprised of 2-tuples
 const KICKS: [[Vec2; 5]; 4] = [
     [Vec2(0,0); 5],
-    [Vec2( 0, 0), Vec2( 1, 0), Vec2( 1,-1), Vec2( 0, 2), Vec2( 1, 2)],
+    [Vec2( 0, 0), Vec2( 1, 0), Vec2( 1, 1), Vec2( 0,-2), Vec2( 1,-2)],
     
     [Vec2(0,0); 5 ],
-    [Vec2( 0, 0), Vec2(-1, 0), Vec2(-1,-1), Vec2( 0, 2), Vec2(-1, 2)],
+    [Vec2( 0, 0), Vec2(-1, 0), Vec2(-1, 1), Vec2( 0,-2), Vec2(-1,-2)],
 ];
 
 const I_KICKS: [[Vec2; 5]; 4] = [
     [Vec2( 0, 0), Vec2(-1, 0), Vec2( 2, 0), Vec2(-1, 0), Vec2( 2, 0)],
-    [Vec2(-1, 0), Vec2( 0, 0), Vec2( 0, 0),  Vec2(0, 1), Vec2( 0,-2)],
-    [Vec2(-1, 1), Vec2( 1, 1), Vec2(-2, 1), Vec2( 1, 0), Vec2(-2, 0)],
-    [Vec2( 0, 1), Vec2( 0, 1), Vec2( 0, 1), Vec2( 0,-1), Vec2( 0, 2)],
+    [Vec2(-1, 0), Vec2( 0, 0), Vec2( 0, 0),  Vec2(0,-1), Vec2( 0, 2)],
+    [Vec2(-1,-1), Vec2( 1,-1), Vec2(-2,-1), Vec2( 1, 0), Vec2(-2, 0)],
+    [Vec2( 0,-1), Vec2( 0,-1), Vec2( 0,-1), Vec2( 0, 1), Vec2( 0,-2)],
 ];
 
 const O_KICKS: [[Vec2; 5]; 4] = [
@@ -28,22 +28,22 @@ const O_KICKS: [[Vec2; 5]; 4] = [
 ];
 
 const KICKS_180: [[Vec2; 2]; 4] = [
-    [Vec2( 0, 0), Vec2( 0, 1)],
+    [Vec2( 0, 0), Vec2( 0,-1)],
     [Vec2( 0, 0), Vec2( 1, 0)],
     [Vec2( 0, 0); 2],
     [Vec2( 0, 0); 2],
 ];
 
 const I_KICKS_180: [[Vec2; 2]; 4] = [
-    [Vec2( 1,-1), Vec2( 1, 0)],
-    [Vec2(-1,-1), Vec2( 0, -1)],
+    [Vec2( 1, 1), Vec2( 1, 0)],
+    [Vec2(-1, 1), Vec2( 0,  1)],
     [Vec2( 0, 0); 2],
     [Vec2( 0, 0); 2],
 ];
 
 const O_KICKS_180: [[Vec2; 2]; 4] = [
-    [Vec2( 1, 1), Vec2( 0, 0 )],
     [Vec2( 1,-1), Vec2( 0, 0 )],
+    [Vec2( 1, 1), Vec2( 0, 0 )],
     [Vec2( 0, 0), Vec2( 0, 0 )],
     [Vec2( 0, 0), Vec2( 0, 0 )],
 ];

@@ -27,7 +27,9 @@ pub trait Board {
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 pub struct TetBoard {
-    tiles: [u8; 200]
+    tiles: [u8; 200],
+    pub height: isize,
+    pub width: isize
 }
 
 impl Board for TetBoard {
@@ -46,7 +48,8 @@ impl Board for TetBoard {
     }
     fn from_int_array(arr: [u8; 200]) -> TetBoard {
         let new_board = TetBoard { 
-        
+            height: 20,
+            width: 10,
             tiles: arr
         };
         // println!("{}", new_board);
@@ -75,11 +78,13 @@ impl Board for TetBoard {
     fn get_tile(&self, x: isize, y: isize) -> u8 {
         let pos = Vec2(x.try_into().unwrap(), y.try_into().unwrap());
         // print!("{:?}", pos);
-        if self.in_bounds(pos) {
-            let (x, y)  = pos.to_usize();
-            self.tiles[y * 10 + x]
+        if x > -1 && x < 10 && y > -1 && y < self.height  {
+            
+            self.tiles[pos.1 as usize * 10 + pos.0 as usize]
+        } else if (pos.1 < 0) {
+            0
         } else {
-            8 
+            8
         }
         
     }
@@ -92,7 +97,7 @@ impl Board for TetBoard {
         }
     }    
     fn does_collide(&self, piece: TetPiece) -> bool {
-        let mut minos = piece.get_raw_minos();
+        let mut minos = piece.get_minos();
         // println!("{:?}", piece.position);
         // println!("{:?}", minos.map(|
         //     mino| Vec2(
@@ -100,22 +105,11 @@ impl Board for TetBoard {
         //         mino.1 + piece.position.1
         //     )
         // ) );
-        minos = minos.map(
-            | mino | Vec2(mino.0 + piece.position.0, (23 - piece.position.1) - mino.1)
-        );
         // println!("NEW DAS") ;
         for mut mino_pos in minos {
           
-            if !self.in_bounds(mino_pos) {
+            if self.tile_occupied(mino_pos.0 as isize, mino_pos.1 as isize) {
                 return true;
-            }
-            if (
-                self.tile_occupied(
-                mino_pos.0.try_into().unwrap(), 
-                mino_pos.1.try_into().unwrap()
-                )
-            ) {
-                return true; 
             }
         }
         return false;
@@ -150,9 +144,8 @@ impl Board for TetBoard {
         } else  {
             let kicks = get_kicks(*piece);
             // println!("Starting kicks, start rotation: {}, new rotation: {}", old_rot, new_rot);
-            // println!("Raw minos of new rotation vs old: {:?} {:?}", test_piece.get_raw_minos(), piece.get_raw_minos());
             // println!("Actual minos of new rotation vs old: {:?} {:?}", test_piece.get_minos(), piece.get_minos());
-            // println!("Applied minos for new rotation\n{}", field::Field::new(*self, Some(test_piece)));
+            // println!("Applied minos for new rotation\n{}", field::Field::new(*self, Some(test_piece), None));
             let mut passed_tests = true;
             for i in 0..5 { 
                 let old_offset = kicks[old_rot][i];
@@ -164,8 +157,8 @@ impl Board for TetBoard {
                 // print!("===========NEW ROT===========\n");
                 // println!("Old offset: {:?}, New offset: {:?}", old_offset, new_offset);
                 // println!("Attempting to rotate with offset {:?}", shift);
-                // println!("{:?}", Vec2(10,23) - test_piece.position);
-                // println!("{}", field::Field::new(*self, Some(test_piece)));
+                // println!("{:?}", test_piece.position);
+                // println!("{}", field::Field::new(*self, Some(test_piece), None));
                 if self.does_collide(test_piece) {
                     test_piece.position -= shift;
                     passed_tests = false;
@@ -206,10 +199,10 @@ impl Board for TetBoard {
                 for i in 0..23 {
                     if self.does_collide(*piece) {
                         
-                        piece.position += Vec2(0, 1);
+                        piece.position -= Vec2(0, 1);
                         break;
                     }
-                    piece.position -= Vec2(0, 1);
+                    piece.position += Vec2(0, 1);
                 }
             }
             _ => {}
@@ -238,7 +231,8 @@ impl TetBoard {
     pub fn new() -> TetBoard {
         
         let new_board = TetBoard { 
-           
+            height: 20,
+            width: 10,
             tiles: [0; 200]
 
         };
@@ -266,12 +260,7 @@ impl TetBoard {
     #[wasm_bindgen(js_name = fromIntArray)]
     pub fn js_from_int_array(arr: Uint8Array) -> TetBoard {
         let arr = arr.to_vec().as_slice().try_into().unwrap();
-        let new_board = TetBoard { 
-        
-            tiles: arr
-        };
-
-        return new_board;
+        return TetBoard::from_int_array(arr);
     }
     #[wasm_bindgen(js_name = from4hArray)]
     pub fn js_from_4h_array(arr: Uint8Array) -> TetBoard {
@@ -422,9 +411,9 @@ impl TetBoard {
 }
 impl Display for TetBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..20 {
-            for j in 0..10 {
-                let tile = self.tiles[i * 10 + j];
+        for i in 0..self.height {
+            for j in 0..self.width {
+                let tile = self.tiles[(i * self.height + j) as usize];
                 let tile_color = piece_color_from_int(tile);
                 if tile == 8 {
                     f.write_str("X");

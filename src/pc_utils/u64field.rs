@@ -48,8 +48,8 @@ impl u64_field {
     pub fn set_piece_color(&mut self, color: PieceColor) {
         self.0 = (self.0 & !15) | (color as u64);
     }
-    pub fn as_array(&self) -> [u8; 240] {
-        let mut base = [0; 240];
+    pub fn as_array(&self) -> [u8; 200] {
+        let mut base = [0; 200];
         if self.is_4h() {
             for i in 0..40 {
                 base[i] = ((self.0 >> i >> 22) & 1) as u8;
@@ -108,19 +108,19 @@ impl u64_field {
     }
 }
 impl Board for u64_field {
-    fn get_tile_array(&self) -> [u8; 240] {
+    fn get_tile_array(&self) -> [u8; 200] {
         return self.as_array();
     }
-    fn get_tile_matrix(&self) -> [[u8; 10]; 24] {
-        let mut matrix: [[u8; 10]; 24] = [[0; 10]; 24];
-        for y in 0..24 {
+    fn get_tile_matrix(&self) -> [[u8; 10]; 20] {
+        let mut matrix: [[u8; 10]; 20] = [[0; 10]; 20];
+        for y in 0..20 {
             for x in 0..10 {
                 matrix[y][x] = self.get_tile(x.try_into().unwrap(), y.try_into().unwrap());
             }
         }
         return matrix;
     }
-    fn from_int_array(arr: [u8; 240]) -> u64_field {
+    fn from_int_array(arr: [u8; 200]) -> u64_field {
         let mut new_board = u64_field(0);
         for i in 0..60 {
             new_board.0 |= (arr[i] as u64) << i;
@@ -129,7 +129,7 @@ impl Board for u64_field {
         return new_board;
     }
     fn from_4h_array(arr: [u8; 40]) -> u64_field {
-        let mut tiles = [0; 240];
+        let mut tiles = [0; 200];
         for y in 0..4 {
             for x in 0..10 {
                 tiles[y * 10 + x] = arr[y * 10 + x];

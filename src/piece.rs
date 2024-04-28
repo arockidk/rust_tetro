@@ -155,39 +155,39 @@ static BLOCKS: [PieceMinos; 7] = [
     ],
     // L
     [
-                                  Vec2( 1, 1),
+                                  Vec2( 1,-1),
         Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
         
     ],
     // O
     [
-                     Vec2( 0, 1), Vec2( 1, 1),
+                     Vec2( 0,-1), Vec2( 1,-1),
                      Vec2( 0, 0), Vec2( 1, 0),  
 
 
     ],
     // Z
     [
-        Vec2(-1, 1), Vec2( 0, 1),
+        Vec2(-1,-1), Vec2( 0,-1),
                      Vec2( 0, 0), Vec2( 1, 0), 
         
     ],
     // T
     [
-                     Vec2( 0, 1),
+                     Vec2( 0,-1),
         Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
         
     ],
     // J
     [
-        Vec2(-1, 1),
+        Vec2(-1,-1),
         Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
         
     ],
     
     // S
     [
-                     Vec2( 0, 1), Vec2( 1, 1), 
+                     Vec2( 0,-1), Vec2( 1,-1), 
         Vec2(-1, 0), Vec2( 0, 0),
                                             
     ],
@@ -195,7 +195,7 @@ static BLOCKS: [PieceMinos; 7] = [
 
 ];
 
-#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, Debug)]
 #[wasm_bindgen]
 pub struct TetPiece {
     pub color: PieceColor,
@@ -264,16 +264,16 @@ impl TetPiece {
             match self.rotation { 
              Direction::North => {}
              Direction::East => {
-                    mino.0 = mino.1;
-                    mino.1 = -temp;
+                    mino.0 = -mino.1;
+                    mino.1 = temp;
                 }
              Direction::South => {
                     mino.0 *= -1;
                     mino.1 *= -1;
                 }
              Direction::West => {
-                    mino.0 = -mino.1;
-                    mino.1 = temp;
+                    mino.0 = mino.1;
+                    mino.1 = -temp;
                 }
             } 
         }

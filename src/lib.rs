@@ -169,15 +169,18 @@ pub mod tests {
     }
     #[test]
     fn rotation_test () {
-        let s = piece::TetPiece::new(PieceColor::S, Direction::North, Vec2(4,20));
+        let s = piece::TetPiece::new(PieceColor::S, Direction::North, Vec2(4,16));
         let mut standard_s_kick = field::Field::new(board::TetBoard::from_4h_array([
             0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0,0,0,0,0,
             8,8,8,8,8,0,0,8,8,8,
             8,8,8,8,0,0,8,8,8,8
         ]),  Some(s), None);
+        print!("{}", standard_s_kick);
         standard_s_kick.rotate_piece(1);
-    //    print!("{}", standard_s_kick);
+        print!("{}", standard_s_kick);
+        println!("{:?}", standard_s_kick.active_piece);
+    //    print!("{}", standard_s_kick);    
        standard_s_kick.das_piece(Direction::South);
     //    print!("{:?}", standard_s_kick.active_piece.position);
     //    print!("{}", standard_s_kick);

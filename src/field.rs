@@ -59,9 +59,7 @@ impl fmt::Display for Field {
         let mut piece_minos: Option<PieceMinos> = None;
         match self.active_piece { 
             Some(piece) => {
-                piece_minos = Some(piece.get_raw_minos().map(
-                    | mino | Vec2(mino.0 + piece.position.0, (23 - piece.position.1) - mino.1)
-                ));
+                piece_minos = Some(piece.get_minos());
                 // println!("Field display, active piece: {:?}", self.active_piece.position);
                 // println!("{:?}", piece_minos);
                 // println!("{:?}", self.active_piece.get_minos());
@@ -69,9 +67,9 @@ impl fmt::Display for Field {
             None => ()
         }
 
-        for i in 0..24 {
+        for i in 0..self.board.height {
             // print!("{} {}", 23 - i, i);
-            for j in 0..10 {
+            for j in 0..self.board.width {
                 let mut tile = self.board.get_tile(j, i);
                 match self.active_piece {
                     Some(piece) => {
