@@ -9,7 +9,6 @@ pub mod kicks;
 pub mod board;
 pub mod vec2;
 pub mod colors;
-pub mod tetra;
 pub mod pc_utils;
 pub mod gameplay;
 #[cfg(test)]

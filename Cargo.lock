@@ -63,7 +63,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rs_tetris_utils"
+name = "rust_tetro"
 version = "0.1.0"
 dependencies = [
  "fumen",
