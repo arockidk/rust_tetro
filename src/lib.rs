@@ -221,7 +221,7 @@ pub mod tests {
         // assert_eq!(board.can_place(t), true);
         let mut board = TetBoard::new();
         let mut piece = TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
-        board.get_piece_placements(piece, 4);
+        // board.get_piece_placements(piece, 4);
         
     }
 }

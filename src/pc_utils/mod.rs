@@ -1,4 +1,4 @@
-mod u64field;
+mod u64board;
 use std::any::Any;
 
 use crate::board::{Board, TetBoard};
@@ -47,15 +47,15 @@ impl Queue {
         count
     }
 }
-pub use u64field::u64_field;
+pub use u64board::u64_board;
 pub struct PiecePos(u8, u8, Direction);
-impl TetBoard {
+impl u64_board {
     pub fn get_piece_placements(&self, mut piece: TetPiece, height: u8) -> Vec<PiecePos> {
         let mut placements = Vec::new();
         piece.position.1 = (height) as i64;
         piece.position.0 = 1;
         self.das_piece(&mut piece, Direction::South);
-        println!("{}", Field::new(self.clone(), Some(piece), None));
+        println!("{}", Field::new(self.as_board(), Some(piece), None));
         
         placements
 

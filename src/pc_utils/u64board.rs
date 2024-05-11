@@ -5,149 +5,106 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use crate::{board::{Board, TetBoard}, kicks::{get_180_kicks, get_kicks}, piece::{piece_color_from_int, Direction, PieceColor, TetPiece}, queue::{Queue, QueueNode}, vec2::Vec2};
 #[wasm_bindgen]
 /**
- * Right to left:
- * 1st bit deterimines whether board is 6h or not (0 is 4h, 1 is 6h)
- * next 3 bits deterimine an active piece (4)
- * if 6h, next 60 bits represent board state
- * bit 4 will be located at (0,6) assuming (0,0) is the bottom left most mino of the field
- * bit 14 will be located at (0,5), etc.
- * if 4h, next 3 bits will represent hold piece (7)
- * next 15 bits will represent 5 piece queue (22)
- * next 40 bits will represent the board (same as above) (62)
- * next 2 bits will be buffer
+ * lowest 40 bits represent 10x4 board state
+ * example:
+ * 0b0000001111_0000000111_0000011111_0000001111
+ * on multiple lines this will look like
+ * 0b0000001111
+ *   0000000111
+ *   0000011111
+ *   0000000111
+ * 
  */
-pub struct u64_field(u64);
-impl u64_field {
-    pub fn encode_board(board: TetBoard, is_6h: bool) -> u64_field {
-        let mut new_field = 0;
-        if is_6h {
-            
-            
-            
-        } else {
+pub struct u64_board(u64);
+impl u64_board {
+    pub fn from_board(board: TetBoard) -> u64_board {
+        let matrix = board.get_tile_matrix();
+        let mut n = 0;
+        for i in 0..4 { 
+            for j in 0..10 {
+                n |= matrix[3 - i][j] as u64;
+                n <<= 1;
+            }
+
 
         }
-        u64_field(new_field) 
-    }
-    pub fn new(board: TetBoard, active: Option<TetPiece>, hold: Option<TetPiece>) -> u64_field {
-        u64_field(0)
-    }
-    pub fn in_4h_bounds(&self, position: Vec2) -> bool {
-        position.0 >= 0 && position.0 < 10 && position.1 >= 0 && position.1 < 4
-    }
-    pub fn in_6h_bounds(&self, position: Vec2) -> bool {
-        position.0 >= 0 && position.0 < 10 && position.1 >= 0 && position.1 < 6
+        u64_board(n)
     }
     pub fn in_bounds(&self, position: Vec2) -> bool {
-        position.0 >= 0 && position.0 < 10 && position.1 >= 0 && position.1 < 24
+        position.0 >= 0 && position.0 < 10 && position.1 >= 15 && position.1 < 20
     }
     
-    pub fn get_piece_color(&self) -> PieceColor {
-        piece_color_from_int((self.0 & 15) as u8)
-    }
-    pub fn set_piece_color(&mut self, color: PieceColor) {
-        self.0 = (self.0 & !15) | (color as u64);
-    }
-    pub fn as_array(&self) -> [u8; 200] {
-        let mut base = [0; 200];
-        if self.is_4h() {
-            for i in 0..40 {
-                base[i] = ((self.0 >> i >> 22) & 1) as u8;
-            }
-        } else {
-            for i in 0..60 {
-                base[i] = ((self.0 >> i >> 4) & 1) as u8;
+    pub fn as_matrix(&self) -> [[u8; 10]; 4] {
+        let mut base = [[0; 10]; 4];
+        for i in 0..4 {
+            for j in 0..10 {
+                base[3 - i][9 - j] = ((self.0 << (i*10+j)) & 0b1) as u8; 
             }
         }
-
+        base
+    }
+    pub fn as_array(&self) -> [u8; 40] {
+        let mut base = [0; 40];
+        for i in 0..40 {
+            base[39 - i] = ((self.0 << i) & 0b1) as u8;
+        }
         base
     }
     pub fn as_board(&self) -> TetBoard {
-        let mut new_board = TetBoard::new();
-        if self.is_4h() {
-            for i in 0..40 {
-                new_board.set_tile(i % 10, 22 - (i / 10), (((self.0 >> i >> 22) & 1) * 8).try_into().unwrap());
-            }
-        } else {
-            for i in 0..60 {
-                new_board.set_tile(i % 10, 22 - (i / 10), (((self.0 >> i >> 4) & 1) * 8).try_into().unwrap());
-            }
-        }
-
-        new_board
-    }
-    pub fn is_4h(&self) -> bool {
-        (self.0 & 0b1) == 0
-    }
-    pub fn is_6h(&self) -> bool {
-        (self.0 & 0b1) == 1
-    }
-    pub fn get_active(&self) -> PieceColor {
-        let mut c_int = self.0 >> 1 & 0b111;
-        piece_color_from_int(c_int.try_into().unwrap())
-
-    }
-    pub fn get_queue(&self) -> Option<Queue> {
-        if self.is_6h() {
-            None
-        } else {
-            let mut q = Queue::new();
-            let mut int_q = self.0 >> 7;
-            for i in 0..5 {
-                q.push(QueueNode::new(
-                    crate::queue::QueueNodeType::Piece,
-                    None, 
-                    Some(piece_color_from_int((int_q & 0b111).try_into().unwrap())),
-                    None
-                ))
-            }
-            Some(q)
-        }
-
-        
+        TetBoard::from_4h_array(self.as_array())
     }
 }
-impl Board for u64_field {
+impl Board for u64_board {
     fn get_tile_array(&self) -> [u8; 200] {
-        return self.as_array();
+        let mut arr = [0; 200];
+        for i in 15..20 {
+            for j in 0..10 {
+                arr[i * 10 + j] = (self.0 >> (i*10+j) & 0b1) as u8;
+            }
+        }
+        arr
     }
     fn get_tile_matrix(&self) -> [[u8; 10]; 20] {
         let mut matrix: [[u8; 10]; 20] = [[0; 10]; 20];
+        let mut array = self.get_tile_array();
         for y in 0..20 {
             for x in 0..10 {
-                matrix[y][x] = self.get_tile(x.try_into().unwrap(), y.try_into().unwrap());
+                matrix[y][x] = array[y * 10 + x];
             }
         }
         return matrix;
     }
-    fn from_int_array(arr: [u8; 200]) -> u64_field {
-        let mut new_board = u64_field(0);
-        for i in 0..60 {
-            new_board.0 |= (arr[i] as u64) << i;
+    fn from_int_array(arr: [u8; 200]) -> u64_board {
+        let mut new_board = u64_board(0);
+        for i in 160..200 {
+            new_board.0 |= (arr[i] as u64);
+            new_board.0 <<= 1;
         }         
 
         return new_board;
     }
-    fn from_4h_array(arr: [u8; 40]) -> u64_field {
-        let mut tiles = [0; 200];
-        for y in 0..4 {
-            for x in 0..10 {
-                tiles[y * 10 + x] = arr[y * 10 + x];
+    fn from_4h_array(arr: [u8; 40]) -> u64_board {
+        let mut base: u64 = 0;
+        for i in 0..4 { 
+            for j in 0..10 {
+                base += arr[(3-i)*10 + j] as u64; ;
+                base <<= 1;
             }
+
         }
-        return Self::from_int_array(tiles);
-    } 
+        u64_board(base)
+    }
     fn tile_occupied(&self, x: isize, y: isize) -> bool {
         self.get_tile(x, y) != 0
     }
 
     
     fn clear_tile(&mut self, x: isize, y: isize) {
-        self.0 &= !(1 << (4 + x + y * 10));
+        self.0 &= !(1 << (x + y * 10));
     }    
 
     fn in_bounds(&self, pos: Vec2) -> bool { 
-        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24
+        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 20
     }
     fn rotate_piece(&self , piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
@@ -245,7 +202,7 @@ impl Board for u64_field {
     }
 
     fn get_tile(&self, x: isize, y: isize) -> u8 {
-        if self.in_6h_bounds(Vec2(x.try_into().unwrap(), y.try_into().unwrap())) {
+        if self.in_bounds(Vec2(x.try_into().unwrap(), y.try_into().unwrap())) {
             ((self.0 >> (4 + x + y * 10)) & 1) as u8
         } else {
             1
@@ -254,7 +211,7 @@ impl Board for u64_field {
     }
 
     fn set_tile(&mut self, x: isize, y: isize, new: u8) {
-        if self.in_6h_bounds(Vec2(x.try_into().unwrap(), y.try_into().unwrap())) {
+        if self.in_bounds(Vec2(x.try_into().unwrap(), y.try_into().unwrap())) {
             self.0 = (self.0 & !(1 << (4 + x + y * 10))) | ((new as u64) << (4 + x + y * 10));
         }
     }
@@ -283,7 +240,7 @@ impl Board for u64_field {
         }
     }
 }
-impl std::fmt::Display for u64_field {
+impl std::fmt::Display for u64_board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_board())
     }

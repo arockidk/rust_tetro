@@ -67,7 +67,7 @@ impl fmt::Display for Field {
             None => ()
         }
 
-        for i in 0..self.board.height {
+        for i in (0..self.board.height).rev() {
             // print!("{} {}", 23 - i, i);
             for j in 0..self.board.width {
                 let mut tile = self.board.get_tile(j, i);
