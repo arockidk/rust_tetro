@@ -295,6 +295,24 @@ impl Queue {
             Some(res.unwrap())
         }
     }
+    #[wasm_bindgen(js_name = insertPiece)] 
+    pub fn insert_piece(&mut self, piece: PieceColor) {
+        let node = QueueNode::from(piece);
+        self.push_back(node);
+    }
+    #[wasm_bindgen(js_name = takeNextPiece)]
+    pub fn take_next_piece(&mut self) -> Option<PieceColor> {
+        let node = self.pop_front();
+        if let Some(node) = node {
+            if let Some(piece) = node.get_piece() {
+                Some(piece)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
 
 }
 impl Queue {
