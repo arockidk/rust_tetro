@@ -1,5 +1,6 @@
-use js_sys::{Uint16Array, Uint8Array};
+use js_sys::{Array, Uint16Array, Uint8Array};
 use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsValue;
 use std::fmt::{Display, Write};
 use crate::colors::get_piece_color;
 use crate::field;
@@ -314,6 +315,23 @@ impl TetBoard {
     #[wasm_bindgen(js_name = "canPlace")]
     pub fn js_can_place(&self, piece: TetPiece) -> bool {
         self.can_place(piece)
+    }
+    #[wasm_bindgen(js_name = getTileArray)]
+    pub fn js_get_tile_array(&self) -> Uint8Array {
+        Uint8Array::from(self.get_tile_array().as_slice())
+    }
+    #[wasm_bindgen(js_name = getTileMatrix)]
+    pub fn js_get_tile_matrix(&self) -> Array {
+        let matrix = self.get_tile_matrix();
+        let mut arr = Array::new();
+        for i in 0..20 {
+            let mut sub_arr = Array::new();
+            for j in 0..10 {
+                sub_arr.push(&JsValue::from(matrix[i][j]));
+            }
+            arr.push(&JsValue::from(sub_arr));
+        }
+        arr
     }
 }
 impl Display for TetBoard {
