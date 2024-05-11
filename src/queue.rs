@@ -253,22 +253,32 @@ pub struct Queue {
 }
 #[wasm_bindgen]
 impl Queue {
+    #[wasm_bindgen(constructor)]
     pub fn new() -> Queue {
         Queue {head: None}
     }
-    pub fn push_js(&mut self, node: JsValue) {
-        
+    #[wasm_bindgen(js_name = pushBack)]
+    pub fn js_push_back(&mut self, node: JsValue) {
         if let Ok(node) = serde_wasm_bindgen::from_value(node){
-            self.push(node);
+            self.push_back(node);
         }
-        
     }
-    pub fn pop_js(&mut self) -> Result<JsValue, serde_wasm_bindgen::Error> {
-        let node = self.pop();
-        
+    #[wasm_bindgen(js_name = popBack)]
+    pub fn js_pop_back(&mut self) -> Result<JsValue, serde_wasm_bindgen::Error> {
+        let node = self.pop_back();
         serde_wasm_bindgen::to_value(&node)
     }
-
+    #[wasm_bindgen(js_name = pushFront)]
+    pub fn js_push_front(&mut self, node: JsValue) {
+        if let Ok(node) = serde_wasm_bindgen::from_value(node){
+            self.push_front(node);
+        }
+    }
+    #[wasm_bindgen(js_name = popFront)]
+    pub fn js_pop_front(&mut self) -> Result<JsValue, serde_wasm_bindgen::Error> {
+        let node = self.pop_front();
+        serde_wasm_bindgen::to_value(&node)
+    }
     pub fn head(&self) -> QueueNode {
         if self.head.is_some() {
             self.head.clone().unwrap()
@@ -276,22 +286,53 @@ impl Queue {
             panic!("Head node doesn't exist")
         }
     }
-    
+    #[wasm_bindgen(js_name = fromString)]
+    pub fn js_from_string(s: &str) -> Option<Queue> {
+        let res = Self::from_string(String::from(s));
+        if res.is_err() {
+            None
+        } else {
+            Some(res.unwrap())
+        }
+    }
 
 }
 impl Queue {
-    pub fn push(&mut self, node: QueueNode) {
+    pub fn push_back(&mut self, node: QueueNode) {
         if let Some(ref mut head) = self.head {
             head.push_back(node);
         } else {
             self.head = Some(node);
         }
     }
-    pub fn pop(&mut self) -> Option<QueueNode> { 
+    pub fn pop_back(&mut self) -> Option<QueueNode> { 
         if let Some(ref mut head) = self.head {
             head.pop()
         }
         else {
+            None
+        }
+    }
+    pub fn push_front(&mut self, mut node: QueueNode) {
+        if let Some(head) = self.head.clone() {
+            node.next = Some(Box::new(head));
+            self.head = Some(node);
+        } else {
+            self.head = Some(node);
+        }
+    }
+    pub fn pop_front(&mut self) -> Option<QueueNode> {
+        if let Some(mut head) = self.head.clone() {
+            if let Some(mut next) = head.next.clone()  {
+                head.next = None;
+                self.head = Some(*next);
+                Some(head)    
+            } else {
+                self.head = None;
+                Some(head)
+            }
+            
+        } else {
             None
         }
     }
@@ -380,7 +421,7 @@ impl Queue {
                     count,
                     inverse
                 };
-                base.push(QueueNode {
+                base.push_back(QueueNode {
                     node_type: QueueNodeType::Choose,
                     choose: Some(choose),
                     piece: None,
@@ -390,7 +431,7 @@ impl Queue {
             } else if c == ',' {
                 idx += 1;
             } else if is_piece_color(c) {
-                base.push(QueueNode {
+                base.push_back(QueueNode {
                     node_type: QueueNodeType::Piece,
                     piece: Some(PieceColor::from(c)),
                     choose: None,
@@ -533,7 +574,7 @@ impl Iterator for QueueChooseIterator<'_> {
             if let Some(node) = self.queue.head().at(i).clone() {
                 match node.node_type {
                     QueueNodeType::Piece => {
-                        base.push(node.isolated_clone());
+                        base.push_back(node.isolated_clone());
                     } 
                     QueueNodeType::Choose => {
                         let mut q = ChooseIterator::idxs_to_queue(
@@ -609,7 +650,7 @@ impl Choose {
                 piece: Some(piece),
                 next: None
             };
-            state_clone.queue.push(new);
+            state_clone.queue.push_back(new);
             state_clone.choose.count -= 1;
             state_clone.choose.pieces.remove(i);
 
@@ -633,7 +674,7 @@ impl Choose {
                 next: None
             };
 
-            state_clone.queue.push(new);
+            state_clone.queue.push_back(new);
             state_clone.choose.count -= 1;
             state_clone.choose.pieces.remove(i);
             if state_clone.choose.count == 0 {
@@ -744,7 +785,7 @@ impl ChooseIterator<'_> {
         choose.sort();
         let mut queue = Queue::new();
         for idx in idxs {
-            queue.push(QueueNode {
+            queue.push_back(QueueNode {
                 node_type: QueueNodeType::Piece,
                 piece: Some(choose.pieces[idx]),
                 choose: None,
@@ -870,7 +911,7 @@ impl Queue {
                     count,
                     inverse
                 };
-                queue.push(QueueNode {
+                queue.push_back(QueueNode {
                     node_type: QueueNodeType::Choose,
                     choose: Some(choose),
                     piece: None,
@@ -879,7 +920,7 @@ impl Queue {
                 idx += 1;
 
             } else if is_piece_color(c) {
-                queue.push(QueueNode {
+                queue.push_back(QueueNode {
                     node_type: QueueNodeType::Piece,
                     piece: Some(PieceColor::from(c)),
                     choose: None,
