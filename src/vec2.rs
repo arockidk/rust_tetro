@@ -4,7 +4,14 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, Debug, Eq, serde::Serialize, serde::Deserialize)]
-pub struct Vec2(pub i64, pub i64);
+pub struct Vec2(pub i32, pub i32);
+#[wasm_bindgen]
+impl Vec2 {
+    #[wasm_bindgen(constructor)]
+    pub fn new(x: i32, y: i32) -> Vec2 {
+        Vec2(x, y)
+    }
+}
 impl Vec2 {
     pub fn to_usize(&self) -> (usize, usize) {
         (self.0.try_into().unwrap(), self.1.try_into().unwrap())
@@ -22,9 +29,9 @@ impl Sub<Vec2> for Vec2 {
         Vec2(self.0 - rhs.0, self.1 - rhs.1)
     }
 }
-impl Mul<i64> for Vec2 {
+impl Mul<i32> for Vec2 {
     type Output = Vec2;
-    fn mul(self, rhs: i64) -> Self::Output {
+    fn mul(self, rhs: i32) -> Self::Output {
         Vec2(self.0 * rhs, self.1 * rhs)
     }
 }

@@ -12,7 +12,11 @@ pub struct Field {
     pub active_piece: Option<TetPiece>,
     pub hold: Option<TetPiece>
 }
-
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
 
 #[wasm_bindgen]
 impl Field {
@@ -24,21 +28,43 @@ impl Field {
     
 
     #[wasm_bindgen(js_name = canPlaceActivePiece)]
-    pub fn can_place_active_piece(self: &Field) -> bool { 
+    pub fn can_place_active_piece(&self) -> bool { 
         match self.active_piece {
-            Some(mut p) => {
-                self.board.can_place(p)
+            Some(ref p) => {
+                self.board.can_place(p.clone())
+                
             }
             None => false
         }
     }
+    #[wasm_bindgen(js_name = applyGravity)]
+    pub fn apply_gravity(&mut self, force: i32) -> bool {
+        match self.active_piece {
+            Some(ref mut p) => self.board.apply_gravity(p, force),
+            None => false
+        }
+    }
+    #[wasm_bindgen(js_name = moveLeft)]
+    pub fn move_left(&mut self, amount: i32) -> bool {
+        match self.active_piece {
+            Some(ref mut p) => self.board.move_left(p, amount),
+            None => false
+        }
+    }
+    #[wasm_bindgen(js_name = moveRight)]
+    pub fn move_right(&mut self, amount: i32) -> bool {
+        match self.active_piece {
+            Some(ref mut p) => self.board.move_right(p, amount),
+            None => false
+        }
+    }
     #[wasm_bindgen(js_name = dasPiece)]
-    pub fn das_piece(&mut self, direction: Direction){
+    pub fn das_piece(&mut self, direction: Direction, force: i32) -> i8 {
         match self.active_piece {
             Some(ref mut p) => {
-                self.board.das_piece(p, direction);
+                self.board.das_piece(p, direction, force)
             }
-            None => ()
+            None => (3)
         }
         
         // print!("{:?}", self.active_piece.position);
@@ -51,6 +77,14 @@ impl Field {
             }
             None => ()
         }
+    }
+    #[wasm_bindgen(js_name = getTile)]
+    pub fn get_tile(&self, x: isize, y: isize) -> u8 {
+        self.board.get_tile(x, y)
+    }
+    #[wasm_bindgen(js_name = setTile)]
+    pub fn set_tile(&mut self, x: isize, y: isize, color: u8) {
+        self.board.set_tile(x, y, color);
     }
   
 }
@@ -77,10 +111,10 @@ impl fmt::Display for Field {
                             Some(piece_minos) => {
                                 for mino in piece_minos {
                                     // println!("{} {}", j, mino.0);
-                                    if j as i64 == mino.0 && (i) as i64 == mino.1 {
+                                    if j as i32 == mino.0 && (i) as i32 == mino.1 {
                                         // println!("MATCH~!!!");
                                         // print!("{}", self.active_piece.color as u8);
-                                        tile = piece.color as u8;
+                                        tile = piece.color() as u8;
                                     }
                                 }
                             }

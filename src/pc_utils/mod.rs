@@ -52,9 +52,9 @@ pub struct PiecePos(u8, u8, Direction);
 impl u64_board {
     pub fn get_piece_placements(&self, mut piece: TetPiece, height: u8) -> Vec<PiecePos> {
         let mut placements = Vec::new();
-        piece.position.1 = (height) as i64;
+        piece.position.1 = (height) as i32;
         piece.position.0 = 1;
-        self.das_piece(&mut piece, Direction::South);
+        self.das_piece(&mut piece, Direction::South, 1000);
         println!("{}", Field::new(self.as_board(), Some(piece), None));
         
         placements

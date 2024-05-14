@@ -160,12 +160,18 @@ impl Board for u64_board {
         
     }
 
-    fn das_piece(&self, piece: &mut TetPiece, direction: Direction) { 
+    fn das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 {
+        let mut ret = 0;
+        let original = piece.position; 
         match direction { 
             Direction::East => {
                 for i in 0..11 {
                     piece.position += Vec2(1, 0);
                     if self.does_collide(*piece) {
+                        ret = 1;
+                        if original == piece.position {
+                            ret = 2;
+                        }
                         piece.position -= Vec2(1, 0);
                         break;
                     }
@@ -175,6 +181,10 @@ impl Board for u64_board {
                 for i in 0..11 {
                     piece.position += Vec2(-1, 0);
                     if self.does_collide(*piece) {
+                        ret = 1;
+                        if original == piece.position {
+                            ret = 2;
+                        }
                         piece.position -= Vec2(-1, 0);
                         break;
                     }
@@ -183,7 +193,10 @@ impl Board for u64_board {
             Direction::South => {
                 for i in 0..23 {
                     if self.does_collide(*piece) {
-                        
+                        ret = 1;
+                        if original == piece.position {
+                            ret = 2;
+                        }
                         piece.position += Vec2(0, 1);
                         break;
                     }
@@ -192,12 +205,15 @@ impl Board for u64_board {
             }
             _ => {}
         }
-        
+        ret
     }
-    fn apply_gravity(&mut self, piece: &mut TetPiece) {
-        piece.position += Vec2(0, 1);
+    fn apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool {
+        piece.position += Vec2(0, 1 * force);
         if self.does_collide(*piece) {
-            piece.position -= Vec2(0, 1);
+            piece.position -= Vec2(0, 1 * force);
+            false
+        } else {
+            true
         }
     }
 
@@ -237,6 +253,26 @@ impl Board for u64_board {
             let mut test = piece.clone();
             test.apply_gravity(1);
             self.does_collide(test)
+        }
+    }
+    
+    fn move_left(&self, piece: &mut TetPiece, amount: i32) -> bool {
+        piece.position += Vec2(-1 * amount, 0);
+        if self.does_collide(*piece) {
+            piece.position -= Vec2(-1 * amount, 0);
+            false
+        } else {
+            true
+        }
+    }
+
+    fn move_right(&self, piece: &mut TetPiece, amount: i32) -> bool {
+        piece.position += Vec2(amount, 0);
+        if self.does_collide(*piece) {
+            piece.position -= Vec2(amount, 0);
+            false
+        } else {
+            true
         }
     }
 }

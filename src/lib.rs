@@ -159,8 +159,8 @@ pub mod tests {
     fn das_test() {
         let mut i = piece::TetPiece::new(PieceColor::I, Direction::North, Vec2(4,20));
         let mut f = field::Field::new(board::TetBoard::new(), Some(i), None);
-        f.das_piece(Direction::East);
-        f.das_piece(Direction::South);
+        f.das_piece(Direction::East, 1000);
+        f.das_piece(Direction::South, 1000);
         println!("{}", f);
         f.rotate_piece(1);
         assert_eq!(f.active_piece.unwrap().rotation, Direction::East);
@@ -180,13 +180,14 @@ pub mod tests {
         print!("{}", standard_s_kick);
         println!("{:?}", standard_s_kick.active_piece);
     //    print!("{}", standard_s_kick);    
-       standard_s_kick.das_piece(Direction::South);
+       standard_s_kick.das_piece(Direction::South, 1000);
     //    print!("{:?}", standard_s_kick.active_piece.position);
     //    print!("{}", standard_s_kick);
     //    standard_s_kick.active_piece.position += Vec2(1,0);
        print!("{}", standard_s_kick);
        standard_s_kick.rotate_piece(1);
        print!("{}", standard_s_kick);
+       print!("{}", standard_s_kick.can_place_active_piece());
     }
     #[test]
     //create a new piece for each of the piece colors and print them out with println

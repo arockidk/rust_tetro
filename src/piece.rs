@@ -1,6 +1,6 @@
 
 use fumen::Piece;
-use js_sys::Number;
+use js_sys::{Array, Number};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::convert::{FromWasmAbi, IntoWasmAbi, RefFromWasmAbi};
 use core::fmt;
@@ -198,7 +198,7 @@ static BLOCKS: [PieceMinos; 7] = [
 #[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, Debug)]
 #[wasm_bindgen]
 pub struct TetPiece {
-    pub color: PieceColor,
+    color: PieceColor,
     pub rotation: Direction,
     pub position: Vec2
 }
@@ -251,8 +251,32 @@ impl TetPiece {
     }
     
     #[wasm_bindgen(js_name = "applyGravity")]
-    pub fn apply_gravity(&mut self, force: i64) {
+    pub fn apply_gravity(&mut self, force: i32) {
         self.position.1 -= force;
+    }
+    #[wasm_bindgen(js_name = moveLeft)]
+    pub fn move_left(&mut self, amount: i32) {
+        self.position.0 -= amount;
+    }
+    #[wasm_bindgen(js_name = moveRight)]
+    pub fn move_right(&mut self, amount: i32) {
+        self.position.0 += amount;
+    }
+    #[wasm_bindgen(js_name = getRawMinos)] 
+    pub fn js_get_raw_minos(self: &TetPiece) -> Array { 
+        self.get_raw_minos().iter().copied().map(JsValue::from).collect()
+    }
+    #[wasm_bindgen(js_name = getMinos)] 
+    pub fn js_get_minos(self: &TetPiece) -> Array { 
+        self.get_minos().iter().copied().map(JsValue::from).collect()
+    }
+    #[wasm_bindgen(getter)]
+    pub fn color(&self) -> PieceColor {
+        self.color.clone()
+    }
+    #[wasm_bindgen(setter)]
+    pub fn set_color(&mut self, color: PieceColor) {
+        self.color = color;
     }
 }
 impl TetPiece {
@@ -262,19 +286,19 @@ impl TetPiece {
             let mino = &mut minos[i as usize];
             let temp = mino.0;
             match self.rotation { 
-             Direction::North => {}
-             Direction::East => {
-                    mino.0 = mino.1;
-                    mino.1 = -temp;
-                }
-             Direction::South => {
-                    mino.0 *= -1;
-                    mino.1 *= -1;
-                }
-             Direction::West => {
-                    mino.0 = -mino.1;
-                    mino.1 = temp;
-                }
+                Direction::North => {}
+                Direction::East => {
+                        mino.0 = mino.1;
+                        mino.1 = -temp;
+                    }
+                Direction::South => {
+                        mino.0 *= -1;
+                        mino.1 *= -1;
+                    }
+                Direction::West => {
+                        mino.0 = -mino.1;
+                        mino.1 = temp;
+                    }
             } 
         }
         return minos;

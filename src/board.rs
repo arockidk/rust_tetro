@@ -8,6 +8,11 @@ use crate::kicks::get_kicks;
 use crate::piece::{color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor};
 use crate::{kicks::get_180_kicks, piece::TetPiece};
 use crate::vec2::Vec2;
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
 pub trait Board {
     fn get_tile_array(self: &Self) -> [u8; 200];
     fn get_tile_matrix(self: &Self) -> [[u8; 10]; 20];
@@ -17,12 +22,17 @@ pub trait Board {
     fn in_bounds(&self, position: Vec2) -> bool;
     fn does_collide(&self, piece: TetPiece) -> bool;
     fn rotate_piece(&self , piece: &mut TetPiece, rotation: u8) -> bool;
-    fn das_piece(&self, piece: &mut TetPiece, direction: Direction);
-    fn apply_gravity(&mut self, piece: &mut TetPiece);
+    fn das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8;
+    fn apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool;
+    fn move_left(&self, piece: &mut TetPiece, amount: i32) -> bool;
+    fn move_right(&self, piece: &mut TetPiece, amount: i32) -> bool;
     fn can_place(&self, piece: TetPiece) -> bool;
     fn set_tile(&mut self, x: isize, y: isize, value: u8);
     fn get_tile(&self, x: isize, y: isize) -> u8;
     fn clear_tile(&mut self, x: isize, y: isize);
+    fn place(&mut self, piece: TetPiece) -> bool;
+    fn place_n_clear(&mut self, piece: TetPiece) -> (bool, isize);
+    
 }
 
 #[wasm_bindgen]
@@ -94,12 +104,14 @@ impl Board for TetBoard {
             let x = x as usize;
             let y = y as usize;
             self.tiles[y * 10 + x] = new;
+
         }
         
     }
     
     fn get_tile(&self, x: isize, y: isize) -> u8 {
         let pos = Vec2(x.try_into().unwrap(), y.try_into().unwrap());
+        
         // print!("{:?}", pos);
         if x > -1 && x < 10 && y > -1 && y < self.height  {
             
@@ -198,30 +210,43 @@ impl Board for TetBoard {
         
     }
 
-    fn das_piece(&self, piece: &mut TetPiece, direction: Direction) { 
+    fn das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 { 
+        let mut ret = 0;
+        let original = piece.position;
         match direction { 
             Direction::East => {
-                for i in 0..11 {
+                for i in 0..force {
                     piece.position += Vec2(1, 0);
                     if self.does_collide(*piece) {
                         piece.position -= Vec2(1, 0);
+                        ret = 1;
+                        if original == piece.position {
+                            ret = 2;
+                        }
                         break;
                     }
                 }
             }
             Direction::West => {
-                for i in 0..11 {
+                for i in 0..force {
                     piece.position += Vec2(-1, 0);
                     if self.does_collide(*piece) {
                         piece.position -= Vec2(-1, 0);
+                        ret = 1;
+                        if original == piece.position {
+                            ret = 2;
+                        }
                         break;
                     }
                 }
             }
             Direction::South => {
-                for i in 0..self.height {
+                for i in 0..force {
                     if self.does_collide(*piece) {
-                        
+                        ret = 1;
+                        if original == piece.position {
+                            ret = 2;
+                        }
                         piece.position += Vec2(0, 1);
                         break;
                     }
@@ -230,22 +255,53 @@ impl Board for TetBoard {
             }
             _ => {}
         }
-        
+        ret
     }
     fn can_place(&self, piece: TetPiece) -> bool {
         if self.does_collide(piece) {
            false 
         } else {
             let mut test = piece.clone();
-            test.apply_gravity(1);
-            self.does_collide(test)
+            !self.apply_gravity(&mut test, 1)
         }
     }
-    fn apply_gravity(&mut self, piece: &mut TetPiece) {
-        piece.position -= Vec2(0, 1);
+    fn apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool {
+        piece.position -= Vec2(0, 1 * force);
         if self.does_collide(*piece) {
-            piece.position += Vec2(0, 1);
+            piece.position += Vec2(0, 1 * force);
+            false
+        } else {
+            true
         }
+    }
+    fn move_left(&self, piece: &mut TetPiece, amount: i32) -> bool {
+        piece.position += Vec2(-amount, 0);
+        if self.does_collide(*piece) {
+            piece.position -= Vec2(-amount, 0);
+            false
+        } else {
+            true
+        }
+    }
+    fn move_right(&self, piece: &mut TetPiece, amount: i32) -> bool {
+        piece.position += Vec2(amount, 0);
+        if self.does_collide(*piece) {
+            piece.position -= Vec2(amount, 0);
+            false
+        } else {
+            true
+        }
+    }
+    
+    fn place(&mut self, piece: TetPiece) -> bool {
+        if (!self.can_place(piece)) {
+            false
+        }
+        
+    }
+    
+    fn place_n_clear(&mut self, piece: TetPiece) -> (bool, isize) {
+        todo!()
     }
 }
 #[wasm_bindgen]
@@ -274,7 +330,16 @@ impl TetBoard {
     }
     #[wasm_bindgen(js_name = setTile)]
     pub fn js_set_tile(&mut self, x: isize, y: isize, value: u8) {
+        
         self.set_tile(x, y, value);
+        if x > -1 && y > -1 {
+            log(&format!("tile at ({}, {}): {}", x, y, self.tiles[y as usize * 10 + x as usize]));
+            log(&format!("set_tile({}, {}, {})", x, y, value));
+            log(&format!("{:?}", self.tiles));
+            log(&format!("{}", self.get_tile(x, y)));
+        }
+
+
     }
     #[wasm_bindgen(js_name = clearTile)]
     pub fn js_clear_tile(&mut self, x: isize, y: isize) {
@@ -287,11 +352,8 @@ impl TetBoard {
     }
     #[wasm_bindgen(js_name = from4hArray)]
     pub fn js_from_4h_array(arr: Uint8Array) -> TetBoard {
-        let mut tiles: [u8; 200] = [0; 200];
-        tiles[..=189].copy_from_slice(&[0; 190]);
-        tiles[190..=229].copy_from_slice(arr.to_vec().as_slice().try_into().unwrap());
-        tiles[230..].copy_from_slice(&[0; 10]);
-        return TetBoard::from_int_array(tiles);
+
+        return TetBoard::from_4h_array(arr.to_vec().as_slice().try_into().unwrap());
     }
     #[wasm_bindgen(js_name = doesCollide)]
     pub fn js_does_collide(&self, piece: TetPiece) -> bool {
@@ -308,8 +370,8 @@ impl TetBoard {
         
     }
     #[wasm_bindgen(js_name = "dasPiece")]
-    pub fn js_das_piece(&self, piece: &mut TetPiece, direction: Direction) { 
-        self.das_piece(piece, direction)
+    pub fn js_das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 { 
+        self.das_piece(piece, direction, force)
         
     }
     #[wasm_bindgen(js_name = "canPlace")]
@@ -332,6 +394,18 @@ impl TetBoard {
             arr.push(&JsValue::from(sub_arr));
         }
         arr
+    }
+    #[wasm_bindgen(js_name = applyGravity)]
+    pub fn js_apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool {
+        self.apply_gravity(piece, force)
+    }
+    #[wasm_bindgen(js_name = moveLeft)]
+    pub fn js_move_left(&self, piece: &mut TetPiece, amount: i32) -> bool {
+        self.move_left(piece, amount)
+    }
+    #[wasm_bindgen(js_name = moveRight)]
+    pub fn js_move_right(&self, piece: &mut TetPiece, amount: i32) -> bool {
+        self.move_right(piece, amount)
     }
 }
 impl Display for TetBoard {

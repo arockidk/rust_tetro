@@ -20,7 +20,39 @@ pub struct QueueNode {
     piece: Option<PieceColor>,
     next: Option<Box<QueueNode>>
 }
+#[wasm_bindgen]
 impl QueueNode {
+
+    #[wasm_bindgen(constructor)]
+    pub fn js_new(
+        node_type: QueueNodeType,
+        choose: JsValue,
+        piece: JsValue,
+        next: JsValue
+    ) -> QueueNode {
+        Self::new(
+            node_type,
+            serde_wasm_bindgen::from_value(choose).unwrap(),
+            serde_wasm_bindgen::from_value(piece).unwrap(),
+            serde_wasm_bindgen::from_value(next).unwrap()
+        )
+    }
+    
+
+    #[wasm_bindgen(getter = choose)]
+    pub fn js_choose(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.choose).unwrap() 
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn piece(&self) -> PieceColor {
+        self.piece.unwrap()
+    }
+    
+
+}
+impl QueueNode {
+    
     pub fn new(node_type: QueueNodeType,
         choose: Option<Choose>,
         piece: Option<PieceColor>,
@@ -33,11 +65,17 @@ impl QueueNode {
             next
         }
     }
-    pub fn choose(&self) -> &Choose {
-        self.choose.as_ref().unwrap()
+    pub fn choose(&self) -> Choose {
+        self.choose.clone().unwrap()
     }
-    pub fn piece(&self) -> &PieceColor {
-        self.piece.as_ref().unwrap()
+    pub fn get_choose(&self) -> Option<Choose> {
+        self.choose.clone()
+    }
+    pub fn get_next(&self) -> Option<Box<QueueNode>> {
+        self.next.clone()
+    }
+    pub fn get_piece(&self) -> Option<PieceColor> {
+        self.piece
     }
     pub fn push_back(&mut self, node: QueueNode) {
         if let Some(next) = &self.next {
@@ -182,18 +220,6 @@ impl QueueNode {
     pub fn next(&self) -> Box<QueueNode> {
         self.next.clone().unwrap()
     }
-
-}
-impl QueueNode {
-    pub fn get_choose(&self) -> Option<Choose> {
-        self.choose.clone()
-    }
-    pub fn get_next(&self) -> Option<Box<QueueNode>> {
-        self.next.clone()
-    }
-    pub fn get_piece(&self) -> Option<PieceColor> {
-        self.piece
-    }
 }
 impl fmt::Display for QueueNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -256,6 +282,16 @@ impl Queue {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Queue {
         Queue {head: None}
+    }
+    pub fn append(&mut self, queue: Queue) {
+        if let Some(mut head) = self.head.clone() {
+            if let Some(mut other) = queue.head {
+                head.push_back(other);
+            }
+        } else {
+            self.head = queue.head;
+            
+        }
     }
     #[wasm_bindgen(js_name = pushBack)]
     pub fn js_push_back(&mut self, node: JsValue) {
@@ -354,13 +390,7 @@ impl Queue {
             None
         }
     }
-    pub fn append(&mut self, queue: &mut Queue) {
-        if let Some(ref mut head) = self.head {
-            if let Some(ref mut other) = queue.head {
-                head.push_back(other.clone());
-            }
-        }
-    }
+
     pub fn last(&self) -> QueueNode {
         if let Some(ref head) = self.head {
             head.last().clone()
@@ -599,7 +629,7 @@ impl Iterator for QueueChooseIterator<'_> {
                             self.states.get(&i).unwrap().clone(),
                             node.isolated_clone().choose().clone()
                         );
-                        base.append(&mut q);
+                        base.append(q);
                     }
                 }
             }

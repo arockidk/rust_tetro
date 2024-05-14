@@ -141,7 +141,7 @@ impl TetPage  {
                 p.kind = piece_color_to_fumen_piece_type(c); 
                 match self.field.active_piece {
                     Some(mut piece) => {
-                        piece.color = c;
+                        piece.set_color(c);
                     }
                     None => ()
                 }

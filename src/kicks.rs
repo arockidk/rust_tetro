@@ -49,7 +49,7 @@ const O_KICKS_180: [[Vec2; 2]; 4] = [
 ];
 
 pub fn get_kicks(piece: TetPiece) -> KickData {
-    match piece.color {
+    match piece.color() {
         PieceColor::I => I_KICKS,
         PieceColor::O => O_KICKS,
         _default => KICKS
@@ -57,7 +57,7 @@ pub fn get_kicks(piece: TetPiece) -> KickData {
     }
 }
 pub fn get_180_kicks(piece: TetPiece) -> KickData180 { 
-    match piece.color { 
+    match piece.color() { 
         PieceColor::I => I_KICKS_180,
         PieceColor::O => O_KICKS_180,
         _default => KICKS_180
