@@ -4,3 +4,4 @@ pkg/
 .replit
 relpit.nix
 Cargo.lock
+.cargo/
