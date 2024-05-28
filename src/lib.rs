@@ -19,6 +19,7 @@ pub mod tests {
     use crate::board::TetBoard;
     use crate::field;
     use crate::board;
+    use crate::pc_utils::PiecePos;
     use crate::piece::get_pieces;
     use crate::piece::PieceColor;
     use crate::piece::Direction;
@@ -222,7 +223,7 @@ pub mod tests {
         // assert_eq!(board.can_place(t), true);
         let mut board = TetBoard::new();
         let mut piece = TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
-        // board.get_piece_placements(piece, 4);
-        
+        let placements = board.get_piece_placements(piece);
+        println!("{:?}", placements)
     }
 }

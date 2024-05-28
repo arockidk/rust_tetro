@@ -4,6 +4,7 @@ use js_sys::{Array, Number};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::convert::{FromWasmAbi, IntoWasmAbi, RefFromWasmAbi};
 use core::fmt;
+use std::ops::AddAssign;
 use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
 
@@ -88,7 +89,12 @@ pub enum Direction {
     South = 2,
     West = 3
 }
+impl AddAssign<i32> for Direction {
+    fn add_assign(&mut self, rhs: i32) {
+        *self = Self::from_int(self.to_i64() + rhs as i64);
 
+    }
+}
 
 #[wasm_bindgen]
 
@@ -101,12 +107,19 @@ pub fn direction_to_i8(dir: Direction) -> i8 {
     }
 }
 #[wasm_bindgen]
+pub fn direction_to_i32(dir: Direction) -> i32 {
+    direction_to_i8(dir) as i32        
+}
+#[wasm_bindgen]
 pub fn direction_to_i64(dir: Direction) -> i64 {
     direction_to_i8(dir) as i64        
 }
 impl Direction {
     pub fn to_i8(&self) -> i8 {
         direction_to_i8(*self)
+    }
+    pub fn to_i32(&self) -> i32 {
+        direction_to_i32(*self)
     }
     pub fn to_i64(&self) -> i64 {
         direction_to_i64(*self)

@@ -2,19 +2,19 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 /**
  * Represents a keypress.
- * Bits 1 2 3 4 5 6 7 8
- * Bit 1: Left
- * Bit 2: Right
- * Bit 3: Soft Drop
- * Bit 4: Hard Drop
- * Bit 5: Counter Clockwise
- * Bit 6: Clockwise
- * Bit 7: Hold
- * Bit 8: 180 Rotation
+ * Bits 8 7 6 5 4 3 2 1
+ * Bit 8: Left
+ * Bit 7: Right
+ * Bit 6: Soft Drop
+ * Bit 5: Hard Drop
+ * Bit 4: Counter Clockwise
+ * Bit 3: Clockwise
+ * Bit 2: Hold
+ * Bit 1: 180 Rotation
  */
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[wasm_bindgen]
-struct Action(u8);
+pub struct Action(pub u8);
 #[wasm_bindgen]
 impl Action {
     pub fn get_left(self) -> bool {
