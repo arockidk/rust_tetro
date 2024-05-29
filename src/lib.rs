@@ -222,7 +222,7 @@ pub mod tests {
         // assert_eq!(board.does_collide(t), false);
         // assert_eq!(board.can_place(t), true);
         let mut board = TetBoard::new();
-        let mut piece = TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
+        let mut piece = TetPiece::new(PieceColor::T, Direction::North, Vec2(0,1));
         let placements = board.get_piece_placements(piece);
         println!("{:?}", placements)
     }

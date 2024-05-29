@@ -1,6 +1,8 @@
 mod u64board;
+use core::fmt;
 use std::any::Any;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::hash::Hash;
 
 use crate::board::{Board, TetBoard};
@@ -52,12 +54,13 @@ impl Queue {
     }
 }
 pub use u64board::u64_board;
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct PiecePos(u16);
 impl PiecePos {
     pub fn set_pos(&mut self, val: Vec2) {
         let (x, y) = (val.0, val.1);
-
+        self.set_x(x);
+        self.set_y(y);
     }
     pub fn set_x(&mut self, val: i32) {
         self.0 &= (0b00000111111);
@@ -70,6 +73,22 @@ impl PiecePos {
     pub fn set_rot(&mut self, val: i32) {
         self.0 &= (0b11111111100);
         self.0 |= (val & 0b11) as u16;
+    }
+    pub fn get_pos(&self) -> Vec2 {
+        self.clone().into()
+    }
+    pub fn get_rot(&self) -> Direction {
+        self.clone().into()
+    }
+}
+impl fmt::Display for PiecePos {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f.write_str(format!("{:?} {:?}", self.get_pos(), self.get_rot()).as_str())
+    }
+}
+impl Debug for PiecePos {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_string().as_str())
     }
 }
 impl From<TetPiece> for PiecePos {
@@ -123,7 +142,7 @@ impl TetBoard {
         let mut seen = [false; 32 * 16 * 4];
         let mut start_pos = PiecePos::from(piece);
         piece.set_piece_pos(start_pos);
-        while !self.can_place(piece) {
+        while !self.does_collide(piece) {
             piece.rotation += 1;
             if piece.rotation.to_i8() > 3 {
                 piece.rotation = Direction::North;
