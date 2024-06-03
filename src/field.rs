@@ -1,5 +1,5 @@
 
-use std::fmt::{self, Write};
+use std::fmt::{self, format, Write};
 
 use wasm_bindgen::prelude::*;
 use crate::{board::{Board, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
@@ -17,7 +17,8 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
-
+#[wasm_bindgen()]
+pub struct clear_struct(bool, Vec<isize>);
 #[wasm_bindgen]
 impl Field {
     #[wasm_bindgen(constructor)]
@@ -31,7 +32,9 @@ impl Field {
     pub fn can_place_active_piece(&self) -> bool { 
         match self.active_piece {
             Some(ref p) => {
-                self.board.can_place(p.clone())
+                let a = self.board.can_place(p.clone());
+  
+                a
                 
             }
             None => false
@@ -86,7 +89,28 @@ impl Field {
     pub fn set_tile(&mut self, x: isize, y: isize, color: u8) {
         self.board.set_tile(x, y, color);
     }
-  
+    #[wasm_bindgen(js_name = place_active_piece)] 
+    pub fn place_active_piece(&mut self) -> bool {
+        match self.active_piece {
+            Some(p) => {
+                self.board.place(p)
+            },
+            None => false
+        }
+    }   
+    #[wasm_bindgen(js_name = place_n_clear_active_piece)]
+    pub fn place_n_clear_active_piece(&mut self) -> clear_struct {
+        let mut ret = clear_struct(false, Vec::new());
+        match self.active_piece {
+            Some(p) => {
+                let res = self.board.place_n_clear(p);
+                ret.0 = res.0;
+                ret.1 = res.1;
+            },
+            None => {}  
+        }
+        ret
+    }   
 }
 impl fmt::Display for Field { 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {

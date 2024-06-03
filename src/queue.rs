@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{math::{factorial, usize_factorial}, piece::{is_piece_color, piece_color_to_char, PieceColor, TetPiece}};
 use core::fmt;
-use std::{collections::{HashMap, HashSet}, fmt::Write, io::Cursor, iter::{self, Map}};
+use std::{collections::{HashMap, HashSet}, fmt::Write, io::Cursor, iter::{self, Map}, ptr};
 
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 #[wasm_bindgen]
@@ -283,8 +283,30 @@ impl Queue {
     pub fn new() -> Queue {
         Queue {head: None}
     }
+    pub fn at(&self, idx: i32) -> Option<QueueNode> {
+        if let Some(ref head) = self.head {
+            if let Some(ret) = head.at(idx.try_into().unwrap()) {
+                Some(ret.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } 
+    pub fn mut_at(&mut self, idx: i32) -> *mut QueueNode {
+        if let Some(ref mut head) = self.head {
+            if let Some(ret) = head.mut_at(idx.try_into().unwrap()) {
+                ret
+            } else {
+                ptr::null_mut()
+            }
+        } else {
+            ptr::null_mut()
+        }
+    } 
     pub fn append(&mut self, queue: Queue) {
-        if let Some(mut head) = self.head.clone() {
+        if let Some(ref mut head) = self.head {
             if let Some(mut other) = queue.head {
                 head.push_back(other);
             }
@@ -349,6 +371,13 @@ impl Queue {
             None
         }
     }
+    pub fn len(&self) -> usize {
+        if let Some(head) = &self.head {
+            head.len()
+        } else {
+            0
+        }
+    }
 
 }
 impl Queue {
@@ -405,13 +434,7 @@ impl Queue {
             panic!("Head node doesn't exist")
         }
     }
-    pub fn len(&self) -> usize {
-        if let Some(head) = &self.head {
-            head.len()
-        } else {
-            0
-        }
-    }
+
     pub fn from_string(mut s: String) -> Result<Self, InvalidQueueFormatError> {
         let mut base = Queue::new();
         s.retain(|c| !c.is_whitespace());
@@ -428,7 +451,7 @@ impl Queue {
                     c = s.chars().nth(idx).unwrap();
                     if c == '^' {
                         inverse = true;
-                        
+                        idx += 1;
                     }
                     while s.chars().nth(idx).unwrap() != ']' {
                         c = s.chars().nth(idx).unwrap();

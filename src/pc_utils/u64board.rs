@@ -35,7 +35,7 @@ impl u64_board {
         u64_board(n)
     }
     pub fn in_bounds(&self, position: Vec2) -> bool {
-        position.0 >= 0 && position.0 < 10 && position.1 >= 15 && position.1 < 20
+        position.0 >= 0 && position.0 < 10 && position.1 >= 15 && position.1 < 24
     }
 
     pub fn as_matrix(&self) -> [[u8; 10]; 4] {
@@ -59,28 +59,28 @@ impl u64_board {
     }
 }
 impl Board for u64_board {
-    fn get_tile_array(&self) -> [u8; 200] {
-        let mut arr = [0; 200];
-        for i in 15..20 {
+    fn get_tile_array(&self) -> [u8; 240] {
+        let mut arr = [0; 240];
+        for i in 15..24 {
             for j in 0..10 {
                 arr[i * 10 + j] = (self.0 >> (i * 10 + j) & 0b1) as u8;
             }
         }
         arr
     }
-    fn get_tile_matrix(&self) -> [[u8; 10]; 20] {
-        let mut matrix: [[u8; 10]; 20] = [[0; 10]; 20];
+    fn get_tile_matrix(&self) -> [[u8; 10]; 24] {
+        let mut matrix: [[u8; 10]; 24] = [[0; 10]; 24];
         let mut array = self.get_tile_array();
-        for y in 0..20 {
+        for y in 0..24 {
             for x in 0..10 {
                 matrix[y][x] = array[y * 10 + x];
             }
         }
         return matrix;
     }
-    fn from_int_array(arr: [u8; 200]) -> u64_board {
+    fn from_int_array(arr: [u8; 240]) -> u64_board {
         let mut new_board = u64_board(0);
-        for i in 160..200 {
+        for i in 160..240 {
             new_board.0 |= (arr[i] as u64);
             new_board.0 <<= 1;
         }
@@ -106,7 +106,7 @@ impl Board for u64_board {
     }
 
     fn in_bounds(&self, pos: Vec2) -> bool {
-        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 20;
+        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24;
     }
     fn rotate_piece(&self, piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
@@ -284,7 +284,15 @@ impl Board for u64_board {
         }
         true
     }
-
+    fn unplace(&mut self, piece: TetPiece) -> bool {
+        for mino in piece.get_minos() {
+            self.clear_tile(
+                mino.0.try_into().unwrap(),
+                mino.1.try_into().unwrap(),
+            );
+        }
+        true
+    }
     fn place_n_clear(&mut self, piece: TetPiece) -> (bool, Vec<isize>) {
         if self.place(piece) {
             let mut ret = self.get_filled_rows();

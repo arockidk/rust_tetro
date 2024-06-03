@@ -38,6 +38,20 @@ pub fn piece_color_from_int(int: u8) -> PieceColor {
         _ => PieceColor::T
     }
 }
+#[wasm_bindgen(js_name = "pieceColorFromStr")]
+pub fn piece_color_from_str(str: &str) -> PieceColor {
+    match str {
+        "B" => PieceColor::B,
+        "I" => PieceColor::I,
+        "L" => PieceColor::L,
+        "O" => PieceColor::O,
+        "Z" => PieceColor::Z,
+        "T" => PieceColor::T,
+        "J" => PieceColor::J,
+        "S" => PieceColor::S,
+        _ => PieceColor::T
+    }
+}
 #[wasm_bindgen(js_name = "pieceColorToChar")]
 pub fn piece_color_to_char(color: PieceColor) -> char {
     match color {
@@ -267,6 +281,10 @@ impl TetPiece {
     pub fn apply_gravity(&mut self, force: i32) {
         self.position.1 -= force;
     }
+    #[wasm_bindgen(js_name = "clone")]
+    pub fn js_clone(&self) -> TetPiece {
+        TetPiece::new(self.color, self.rotation, self.position)
+    }
     #[wasm_bindgen(js_name = moveLeft)]
     pub fn move_left(&mut self, amount: i32) {
         self.position.0 -= amount;
@@ -291,6 +309,7 @@ impl TetPiece {
     pub fn set_color(&mut self, color: PieceColor) {
         self.color = color;
     }
+    
 }
 impl TetPiece {
     pub fn get_raw_minos(&self) -> PieceMinos {

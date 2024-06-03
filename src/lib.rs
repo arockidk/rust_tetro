@@ -13,12 +13,18 @@ pub mod pc_utils;
 pub mod gameplay;
 #[cfg(test)]
 pub mod tests {
+    use std::fs::File;
+    use std::fs::OpenOptions;
+    use std::io::BufWriter;
+    use std::io::Write;
+
     use fumen::RotationState;
 
     use crate::board::Board;
     use crate::board::TetBoard;
     use crate::field;
     use crate::board;
+    use crate::field::Field;
     use crate::pc_utils::PiecePos;
     use crate::piece::get_pieces;
     use crate::piece::PieceColor;
@@ -27,6 +33,8 @@ pub mod tests {
     use crate::queue::Queue;
     use crate::queue::choose;
     use crate::piece;
+    use crate::queue::QueueNode;
+    use crate::queue::QueueNodeType;
     use crate::vec2::Vec2;
     use crate::fumen::TetFumen;
     
@@ -224,6 +232,78 @@ pub mod tests {
         let mut board = TetBoard::new();
         let mut piece = TetPiece::new(PieceColor::T, Direction::North, Vec2(0,1));
         let placements = board.get_piece_placements(piece);
-        println!("{:?}", placements)
+        println!("{:?}", placements);
+        let mut new_piece = TetPiece::new(PieceColor::J, Direction::North, Vec2(0,4));
+        let mut file = OpenOptions::new().write(true).open("log.txt").unwrap();
+        let mut buff = BufWriter::new(file);
+        for placement in placements {
+
+            piece.set_piece_pos(placement);
+            board.place(piece);
+            let new_placements = board.get_piece_placements(new_piece);
+
+            for new_placement in new_placements {
+                new_piece.set_piece_pos(new_placement);
+
+                board.place(new_piece);
+                // buff.write_all(board.to_string().as_bytes());
+                board.unplace(new_piece);
+                
+            }
+            board.unplace(piece);
+
+        }
+    }
+    #[test]
+    fn q_test() {
+        use crate::queue::QueueNodeType::Piece;
+        let mut a = Queue::new();
+        let mut b = Queue::new();
+        a.insert_piece(PieceColor::I);
+        a.insert_piece(PieceColor::J);
+        assert_eq!(a.len(), 2);
+        b.insert_piece(PieceColor::L);
+        b.insert_piece(PieceColor::S);
+        assert_eq!(b.len(), 2);
+        a.append(b);
+        println!("{}", a);
+        assert_eq!(a.len(), 4);
+    }
+    #[test]
+    fn line_test() {
+        let mut board = TetBoard::new();
+        let rows = board.get_filled_rows();
+        assert_eq!(rows.len(), 0);
+
+        board.set_tile(0, 0, 8);
+        assert_eq!(rows.len(), 0);
+
+        for j in 1..9 {
+            board.set_tile(j, 0, 8);
+            let rows = board.get_filled_rows();
+            assert_eq!(rows.len(), 0);
+        }
+
+        
+        board.set_tile(9, 0, 8);
+        let rows = board.get_filled_rows();
+        assert_eq!(rows.len(), 1);
+        for j in 0..10 {
+            board.clear_tile(j, 0);
+        }
+        let mut i = TetPiece::new(PieceColor::I, Direction::North, Vec2(1,6));
+        println!("{}", Field::new(board, Some(i), None));
+        board.das_piece(&mut i, Direction::South, 999);
+        board.place(i);
+        let rows = board.get_filled_rows();
+        assert_eq!(rows.len(), 0);
+        let mut board = TetBoard::from_4h_array([
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            8,8,8,8,8,8,8,8,8,8,
+            0,0,0,0,0,0,0,0,0,0
+        ]);
+        let rows = board.get_filled_rows();
+        assert_eq!(rows.len(), 1);
     }
 }

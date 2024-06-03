@@ -160,7 +160,7 @@ impl TetBoard {
 
         }
         start_pos = PiecePos::from(piece);
-        println!("{} {}", Field::new(self.clone(), Some(piece), None), start_pos);
+
         piece.move_left(1);
         if !self.does_collide(piece) {
             let pos = PiecePos::from(piece);
@@ -205,15 +205,15 @@ impl TetBoard {
         if !self.does_collide(piece) {
             
             let pos = PiecePos::from(piece);
-            println!("{} {:?}, {}", Field::new(self.clone(), Some(piece), None), piece.position, pos.0);
+            
             seen[pos.0 as usize] = true;  
-            println!("{}", seen[pos.0 as usize]);
+            
             todo.push(pos);
             if self.can_place(piece) { 
                 placements.push(pos);
             }
         } 
-        println!("{:?}", todo);
+        
         let mut i = 0;
         while todo.len() > 0{
             if let Some(mut start_pos) = todo.pop() {

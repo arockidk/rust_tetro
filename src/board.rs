@@ -13,10 +13,16 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
+#[wasm_bindgen]
+pub enum TSpinResult {
+    NoSpin,
+    MiniSpin,
+    TSpin
+};
 pub trait Board {
-    fn get_tile_array(self: &Self) -> [u8; 200];
-    fn get_tile_matrix(self: &Self) -> [[u8; 10]; 20];
-    fn from_int_array(arr: [u8; 200]) -> Self;
+    fn get_tile_array(self: &Self) -> [u8; 240];
+    fn get_tile_matrix(self: &Self) -> [[u8; 10]; 24];
+    fn from_int_array(arr: [u8; 240]) -> Self;
     fn from_4h_array(arr: [u8; 40]) -> Self;
     fn tile_occupied(&self, x: isize, y: isize) -> bool;
     fn in_bounds(&self, position: Vec2) -> bool;
@@ -33,25 +39,28 @@ pub trait Board {
     fn place(&mut self, piece: TetPiece) -> bool;
     fn place_n_clear(&mut self, piece: TetPiece) -> (bool, Vec<isize>);
     fn get_filled_rows(&self) -> Vec<isize>;
+    fn unplace(&mut self, piece: TetPiece) -> bool;
+    fn check_pc(&self) -> bool;
+    fn check_t_spin(&self, piece: &mut TetPiece) -> TSpinResult;
 }
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 pub struct TetBoard {
-    tiles: [u8; 200],
+    tiles: [u8; 240],
     pub height: isize,
     pub width: isize,
 }
 
 impl Board for TetBoard {
-    fn get_tile_array(self: &TetBoard) -> [u8; 200] {
+    fn get_tile_array(self: &TetBoard) -> [u8; 240] {
         return self.tiles;
     }
-    fn get_tile_matrix(self: &TetBoard) -> [[u8; 10]; 20] {
-        let mut matrix: [[u8; 10]; 20] = [[0; 10]; 20];
-        for y in 0..20 {
+    fn get_tile_matrix(self: &TetBoard) -> [[u8; 10]; 24] {
+        let mut matrix: [[u8; 10]; 24] = [[0; 10]; 24];
+        for y in 0..24 {
             for x in 0..10 {
-                matrix[y][x] = self.get_tile(x as isize, 19 - y as isize);
+                matrix[y][x] = self.get_tile(x as isize, 23 - y as isize);
             }
         }
         return matrix;
@@ -59,16 +68,16 @@ impl Board for TetBoard {
     /**
      * For ease of use, first elements (at top) corrispond to top most cells
      */
-    fn from_int_array(mut arr: [u8; 200]) -> TetBoard {
-        for i in 0..20 {
+    fn from_int_array(mut arr: [u8; 240]) -> TetBoard {
+        for i in 0..24 {
             for j in 0..10 {
                 let temp = arr[i * 10 + j];
-                arr[i * 10 + j] = arr[(19 - i) * 10 + j];
-                arr[(19 - i) * 10 + j] = temp;
+                arr[i * 10 + j] = arr[(23 - i) * 10 + j];
+                arr[(23 - i) * 10 + j] = temp;
             }
         }
         let new_board = TetBoard {
-            height: 20,
+            height: 24,
             width: 10,
             tiles: arr,
         };
@@ -84,7 +93,7 @@ impl Board for TetBoard {
                 arr[(3 - i) * 10 + j] = temp;
             }
         }
-        let mut tiles: [u8; 200] = [0; 200];
+        let mut tiles: [u8; 240] = [0; 240];
 
         for i in (0..4).rev() {
             for j in 0..10 {
@@ -112,6 +121,8 @@ impl Board for TetBoard {
         // print!("{:?}", pos);
         if x > -1 && x < 10 && y > -1 && y < self.height {
             self.tiles[pos.1 as usize * 10 + pos.0 as usize]
+        } else if x < 0 || x > 9 {
+            8
         } else if y >= self.height {
             0
         } else {
@@ -120,7 +131,7 @@ impl Board for TetBoard {
     }
 
     fn clear_tile(&mut self, x: isize, y: isize) {
-        if x > 0 && y > 0 && x < self.width && y < self.height {
+        if x > -1 && y > -1 && x < self.width && y < self.height {
             let x = x as usize;
             let y = y as usize;
             self.tiles[y * 10 + x] = 0;
@@ -136,15 +147,17 @@ impl Board for TetBoard {
         //     )
         // ) );
         // println!("NEW DAS") ;
+
         for mut mino_pos in minos {
             if self.tile_occupied(mino_pos.0 as isize, mino_pos.1 as isize) {
                 return true;
             }
         }
+
         return false;
     }
     fn in_bounds(&self, pos: Vec2) -> bool {
-        return pos.0 > -1 && pos.0 < 10 && pos.1 > 0 && pos.1 < 20;
+        return pos.0 > -1 && pos.0 < 10 && pos.1 > 0 && pos.1 < 24;
     }
     fn rotate_piece(&self, piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
@@ -231,6 +244,7 @@ impl Board for TetBoard {
             }
             Direction::South => {
                 for i in 0..force {
+                    piece.position -= Vec2(0, 1);
                     if self.does_collide(*piece) {
                         ret = 1;
                         if original == piece.position {
@@ -239,7 +253,7 @@ impl Board for TetBoard {
                         piece.position += Vec2(0, 1);
                         break;
                     }
-                    piece.position -= Vec2(0, 1);
+
                 }
             }
             _ => {}
@@ -249,9 +263,12 @@ impl Board for TetBoard {
     fn can_place(&self, piece: TetPiece) -> bool {
         if self.does_collide(piece) {
             false
+            
         } else {
             let mut test = piece.clone();
-            !self.apply_gravity(&mut test, 1)
+            let a = !self.apply_gravity(&mut test, 1);
+
+            a
         }
     }
     fn apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool {
@@ -259,6 +276,7 @@ impl Board for TetBoard {
         if self.does_collide(*piece) {
             piece.position += Vec2(0, 1 * force);
             false
+
         } else {
             true
         }
@@ -287,6 +305,7 @@ impl Board for TetBoard {
             return false;
         }
         for mino in piece.get_minos() {
+            
             self.set_tile(
                 mino.0.try_into().unwrap(),
                 mino.1.try_into().unwrap(),
@@ -295,7 +314,18 @@ impl Board for TetBoard {
         }
         true
     }
-
+    fn unplace(&mut self, piece: TetPiece) -> bool {
+        
+        for mino in piece.get_minos() {
+            
+            self.clear_tile(
+                mino.0.try_into().unwrap(),
+                mino.1.try_into().unwrap(),
+            );
+        }
+        
+        true
+    }
     fn place_n_clear(&mut self, piece: TetPiece) -> (bool, Vec<isize>) {
         if self.place(piece) {
             let mut ret = self.get_filled_rows();
@@ -306,14 +336,18 @@ impl Board for TetBoard {
     }
     fn get_filled_rows(&self) -> Vec<isize> {
         let mut rows = Vec::new();
-        for i in 0..20 {
+        
+        for i in 0..self.height {
             let mut filled = true;
             for j in 0..10 {
-                let tile = self.tiles[i * 10 + j];
+                let tile = self.tiles[
+                    (i * 10 + j) as usize
+                ];
                 if tile == 0 {
                     filled = false;
+                    break;
                 }
-                break;
+                
             }
             if filled {
                 rows.push(i as isize);
@@ -321,15 +355,24 @@ impl Board for TetBoard {
         }
         rows
     }
+    
+    fn check_pc(&self) -> bool {
+        let mut clone = self.clone();
+        
+    }
+    
+    fn check_t_spin(&self, piece: &mut TetPiece) -> TSpinResult {
+        todo!()
+    }
 }
 #[wasm_bindgen]
 impl TetBoard {
     #[wasm_bindgen(constructor)]
     pub fn new() -> TetBoard {
         let new_board = TetBoard {
-            height: 20,
+            height: 24,
             width: 10,
-            tiles: [0; 200],
+            tiles: [0; 240],
         };
 
         return new_board;
@@ -347,15 +390,15 @@ impl TetBoard {
     pub fn js_set_tile(&mut self, x: isize, y: isize, value: u8) {
         self.set_tile(x, y, value);
         if x > -1 && y > -1 {
-            log(&format!(
-                "tile at ({}, {}): {}",
-                x,
-                y,
-                self.tiles[y as usize * 10 + x as usize]
-            ));
-            log(&format!("set_tile({}, {}, {})", x, y, value));
-            log(&format!("{:?}", self.tiles));
-            log(&format!("{}", self.get_tile(x, y)));
+            // log(&format!(
+            //     "tile at ({}, {}): {}",
+            //     x,
+            //     y,
+            //     self.tiles[y as usize * 10 + x as usize]
+            // ));
+            // log(&format!("set_tile({}, {}, {})", x, y, value));
+            // log(&format!("{:?}", self.tiles));
+            // log(&format!("{}", self.get_tile(x, y)));
         }
     }
     #[wasm_bindgen(js_name = clearTile)]
@@ -377,7 +420,7 @@ impl TetBoard {
     }
     #[wasm_bindgen(js_name = inBounds)]
     pub fn js_in_bounds(&self, pos: Vec2) -> bool {
-        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 20;
+        return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24;
     }
     #[wasm_bindgen(js_name = rotatePiece)]
     pub fn js_rotate_piece(&self, piece: &mut TetPiece, rotation: u8) -> bool {
@@ -399,7 +442,7 @@ impl TetBoard {
     pub fn js_get_tile_matrix(&self) -> Array {
         let matrix = self.get_tile_matrix();
         let mut arr = Array::new();
-        for i in 0..20 {
+        for i in 0..24 {
             let mut sub_arr = Array::new();
             for j in 0..10 {
                 sub_arr.push(&JsValue::from(matrix[i][j]));
@@ -420,12 +463,17 @@ impl TetBoard {
     pub fn js_move_right(&self, piece: &mut TetPiece, amount: i32) -> bool {
         self.move_right(piece, amount)
     }
+    #[wasm_bindgen(js_name = get_filled_rows)]
+    pub fn js_get_filled_rows(&self) -> Vec<isize> {
+        self.get_filled_rows()
+    }
 }
 impl Display for TetBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..self.height {
             for j in 0..self.width {
-                let tile = self.tiles[((self.height - i) * self.width + j) as usize];
+
+                let tile = self.tiles[((self.height - i - 1) * self.width + j) as usize];
                 let tile_color = piece_color_from_int(tile);
                 if tile == 8 {
                     f.write_str("X");
