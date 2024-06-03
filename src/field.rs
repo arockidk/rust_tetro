@@ -1,8 +1,8 @@
 
-use std::fmt::{self, format, Write};
+use std::{clone, fmt::{self, format, Write}};
 
 use wasm_bindgen::prelude::*;
-use crate::{board::{Board, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
+use crate::{board::{Board, ClearStruct, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
@@ -17,8 +17,7 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
-#[wasm_bindgen()]
-pub struct clear_struct(bool, Vec<isize>);
+
 #[wasm_bindgen]
 impl Field {
     #[wasm_bindgen(constructor)]
@@ -99,13 +98,13 @@ impl Field {
         }
     }   
     #[wasm_bindgen(js_name = place_n_clear_active_piece)]
-    pub fn place_n_clear_active_piece(&mut self) -> clear_struct {
-        let mut ret = clear_struct(false, Vec::new());
+    pub fn place_n_clear_active_piece(&mut self) -> ClearStruct {
+        let mut ret = ClearStruct::new(false, Vec::new());
         match self.active_piece {
             Some(p) => {
                 let res = self.board.place_n_clear(p);
                 ret.0 = res.0;
-                ret.1 = res.1;
+                ret.get_lines() = res.get_lines();
             },
             None => {}  
         }

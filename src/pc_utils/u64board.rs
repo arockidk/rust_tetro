@@ -1,9 +1,9 @@
-use std::path::Display;
+use std::{fs::create_dir, path::Display};
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    board::{Board, TetBoard},
+    board::{Board, ClearStruct, TetBoard},
     kicks::{get_180_kicks, get_kicks},
     piece::{piece_color_from_int, Direction, PieceColor, TetPiece},
     queue::{Queue, QueueNode},
@@ -293,12 +293,12 @@ impl Board for u64_board {
         }
         true
     }
-    fn place_n_clear(&mut self, piece: TetPiece) -> (bool, Vec<isize>) {
+    fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
         if self.place(piece) {
             let mut ret = self.get_filled_rows();
-            (true, ret)
+            ClearStruct::new(true, ret)
         } else {
-            (false, Vec::new())
+            ClearStruct::new(false, Vec::new())
         }
     }
     fn get_filled_rows(&self) -> Vec<isize> {
@@ -312,6 +312,18 @@ impl Board for u64_board {
             }
         }
         ret
+    }
+    
+    fn clear_row(&mut self, row: isize) {
+        todo!()
+    }
+    
+    fn check_pc(&self) -> bool {
+        todo!()
+    }
+    
+    fn check_t_spin(&self, piece: &mut TetPiece) -> crate::board::TSpinResult {
+        todo!()
     }
 }
 impl std::fmt::Display for u64_board {

@@ -306,4 +306,10 @@ pub mod tests {
         let rows = board.get_filled_rows();
         assert_eq!(rows.len(), 1);
     }
+    #[test]
+    fn clear_tests() {
+        let f = TetBoard::new();
+        assert!(f.check_pc());
+        
+    }
 }

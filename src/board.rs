@@ -5,6 +5,8 @@ use crate::piece::{color_str, piece_color_from_int, piece_color_to_char, Directi
 use crate::vec2::Vec2;
 use crate::{kicks::get_180_kicks, piece::TetPiece};
 use js_sys::{Array, Uint16Array, Uint8Array};
+use serde::de::value::{EnumAccessDeserializer, IsizeDeserializer};
+use std::clone;
 use std::fmt::{Display, Write};
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
@@ -18,7 +20,21 @@ pub enum TSpinResult {
     NoSpin,
     MiniSpin,
     TSpin
-};
+}
+#[wasm_bindgen()]
+pub struct ClearStruct(pub bool, Vec<isize>);
+impl ClearStruct {
+    pub fn new(success: bool, lines: Vec<isize>) -> Self {
+        ClearStruct::new(success, lines)
+    }
+}
+#[wasm_bindgen]
+impl ClearStruct {
+    #[wasm_bindgen(js_name = "getLines")]
+    pub fn get_lines(&self) -> Vec<isize> {
+        self.1
+    } 
+}
 pub trait Board {
     fn get_tile_array(self: &Self) -> [u8; 240];
     fn get_tile_matrix(self: &Self) -> [[u8; 10]; 24];
@@ -37,11 +53,13 @@ pub trait Board {
     fn get_tile(&self, x: isize, y: isize) -> u8;
     fn clear_tile(&mut self, x: isize, y: isize);
     fn place(&mut self, piece: TetPiece) -> bool;
-    fn place_n_clear(&mut self, piece: TetPiece) -> (bool, Vec<isize>);
+    fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct;
     fn get_filled_rows(&self) -> Vec<isize>;
+    fn clear_row(&mut self, row: isize);
     fn unplace(&mut self, piece: TetPiece) -> bool;
     fn check_pc(&self) -> bool;
     fn check_t_spin(&self, piece: &mut TetPiece) -> TSpinResult;
+    
 }
 
 #[wasm_bindgen]
@@ -326,18 +344,18 @@ impl Board for TetBoard {
         
         true
     }
-    fn place_n_clear(&mut self, piece: TetPiece) -> (bool, Vec<isize>) {
+    fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
         if self.place(piece) {
             let mut ret = self.get_filled_rows();
-            (true, ret)
+            ClearStruct::new(true, ret)
         } else {
-            (false, Vec::new())
+            ClearStruct::new(false, Vec::new())
         }
     }
     fn get_filled_rows(&self) -> Vec<isize> {
         let mut rows = Vec::new();
         
-        for i in 0..self.height {
+        for i in (0..self.height).rev() {
             let mut filled = true;
             for j in 0..10 {
                 let tile = self.tiles[
@@ -358,11 +376,34 @@ impl Board for TetBoard {
     
     fn check_pc(&self) -> bool {
         let mut clone = self.clone();
+        for row in self.get_filled_rows() {
+            clone.clear_row(row);
+        }
+        let mut pc = true;
+        for tile in self.tiles {
+            if tile > 0 {
+                pc = false;
+                break;
+            }
+        }
+        pc
         
     }
     
     fn check_t_spin(&self, piece: &mut TetPiece) -> TSpinResult {
         todo!()
+    }
+    
+    fn clear_row(&mut self, row: isize) {
+        let conv = row as usize;
+        if row < self.height {
+            for j in 0..10 {
+                let above = self.get_tile(j, row + 1);
+
+                self.clear_tile(j, row);
+                self.set_tile(j, row, above);
+            }            
+        }
     }
 }
 #[wasm_bindgen]
