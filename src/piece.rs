@@ -276,7 +276,55 @@ impl TetPiece {
         };
         return piece;
     }
-    
+    pub fn z() -> TetPiece {
+        TetPiece {
+            color: PieceColor::Z,
+            rotation: Direction::North,
+            position: Vec2(0, 0)
+        }
+    }
+    pub fn i() -> TetPiece {
+        TetPiece {
+            color: PieceColor::I,
+            rotation: Direction::North,
+            position: Vec2(0, 0)
+        }
+    }
+    pub fn j() -> TetPiece {
+        TetPiece {
+            color: PieceColor::J,
+            rotation: Direction::North,
+            position: Vec2(0, 0)
+        }
+    }
+    pub fn l() -> TetPiece {
+        TetPiece {
+            color: PieceColor::L,
+            rotation: Direction::North,
+            position: Vec2(0, 0)
+        }
+    }
+    pub fn o() -> TetPiece {
+        TetPiece {
+            color: PieceColor::O,
+            rotation: Direction::North,
+            position: Vec2(0, 0)
+        }
+    }
+    pub fn t() -> TetPiece {
+        TetPiece {
+            color: PieceColor::T,
+            rotation: Direction::North,
+            position: Vec2(0, 0)
+        }
+    }
+    pub fn s() -> TetPiece {
+        TetPiece {
+            color: PieceColor::S,
+            rotation: Direction::North,
+            position: Vec2(0, 0)
+        }
+    }
     #[wasm_bindgen(js_name = "applyGravity")]
     pub fn apply_gravity(&mut self, force: i32) {
         self.position.1 -= force;
