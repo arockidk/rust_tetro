@@ -322,7 +322,7 @@ impl Board for u64_board {
         todo!()
     }
     
-    fn check_t_spin(&self, piece: &mut TetPiece) -> crate::board::TSpinResult {
+    fn check_t_spin(&self, piece: TetPiece) -> crate::board::TSpinResult {
         todo!()
     }
 }

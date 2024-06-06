@@ -4,6 +4,7 @@ use crate::kicks::get_kicks;
 use crate::piece::{color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor};
 use crate::vec2::Vec2;
 use crate::{kicks::get_180_kicks, piece::TetPiece};
+use fumen::Piece;
 use js_sys::{Array, Uint16Array, Uint8Array};
 use serde::de::value::{EnumAccessDeserializer, IsizeDeserializer};
 use std::clone;
@@ -16,24 +17,30 @@ extern "C" {
     fn log(s: &str);
 }
 #[wasm_bindgen]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum TSpinResult {
     NoSpin,
     MiniSpin,
     TSpin
 }
 #[wasm_bindgen()]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ClearStruct(pub bool, Vec<isize>);
 impl ClearStruct {
     pub fn new(success: bool, lines: Vec<isize>) -> Self {
-        ClearStruct::new(success, lines)
+        ClearStruct(success, lines)
     }
+    pub fn set_lines(&mut self, lines: Vec<isize>) {
+        self.1 = lines;
+    } 
 }
 #[wasm_bindgen]
 impl ClearStruct {
     #[wasm_bindgen(js_name = "getLines")]
     pub fn get_lines(&self) -> Vec<isize> {
-        self.1
+        self.1.clone()
     } 
+    
 }
 pub trait Board {
     fn get_tile_array(self: &Self) -> [u8; 240];
@@ -58,7 +65,7 @@ pub trait Board {
     fn clear_row(&mut self, row: isize);
     fn unplace(&mut self, piece: TetPiece) -> bool;
     fn check_pc(&self) -> bool;
-    fn check_t_spin(&self, piece: &mut TetPiece) -> TSpinResult;
+    fn check_t_spin(&self, piece: TetPiece) -> TSpinResult;
     
 }
 
@@ -347,6 +354,9 @@ impl Board for TetBoard {
     fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
         if self.place(piece) {
             let mut ret = self.get_filled_rows();
+            for row in &ret {
+                self.clear_row(*row);
+            }
             ClearStruct::new(true, ret)
         } else {
             ClearStruct::new(false, Vec::new())
@@ -390,19 +400,68 @@ impl Board for TetBoard {
         
     }
     
-    fn check_t_spin(&self, piece: &mut TetPiece) -> TSpinResult {
-        todo!()
+    fn check_t_spin(&self, piece: TetPiece) -> TSpinResult {
+        let mut res = TSpinResult::NoSpin;
+        if piece.color() == PieceColor::T {
+            let x = piece.position.0 as isize;
+
+            let y = piece.position.1 as isize;
+            let mut tl = self.get_tile(x - 1, y + 1);
+            let mut tr = self.get_tile(x + 1, y + 1);
+            let mut bl = self.get_tile(x - 1, y - 1);
+            let mut br = self.get_tile(x + 1, y - 1);
+            if tl > 0 {
+                tl = 1;
+            }
+            if tr > 0 {
+                tr = 1;
+            }
+            if bl > 0 {
+                bl = 1;
+            }
+            if br > 0 {
+                br = 1;
+            }
+            if tl + tr + bl + br >= 3 {
+                res = TSpinResult::MiniSpin;
+            }
+            match piece.rotation {
+                Direction::North => {
+                    if tl == 1 && tr == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                },
+                Direction::East => {
+                    if tr == 1 && br == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                },
+                Direction::South => {
+                    if bl == 1 && br == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                },
+                Direction::West => {
+                    if tl == 1 && bl == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                }
+            }
+        }
+        res
     }
     
     fn clear_row(&mut self, row: isize) {
         let conv = row as usize;
         if row < self.height {
-            for j in 0..10 {
-                let above = self.get_tile(j, row + 1);
-
-                self.clear_tile(j, row);
-                self.set_tile(j, row, above);
-            }            
+            for i in row..23 {
+                for j in 0..10 {
+                    let above = self.get_tile(j, i + 1);
+    
+                    self.clear_tile(j, i);
+                    self.set_tile(j, i, above);
+                }     
+            }
         }
     }
 }
@@ -508,6 +567,31 @@ impl TetBoard {
     pub fn js_get_filled_rows(&self) -> Vec<isize> {
         self.get_filled_rows()
     }
+    #[wasm_bindgen(js_name = clearRow)]
+    pub fn js_clear_row(&mut self, row: isize) {
+        self.clear_row(row);
+    }
+    #[wasm_bindgen(js_name = unplace)]
+    pub fn js_unplace(&mut self, piece: TetPiece) -> bool {
+        self.unplace(piece)
+    }
+    #[wasm_bindgen(js_name = checkPC)]
+    pub fn js_check_pc(&self) -> bool {
+        self.check_pc()
+    }  
+    #[wasm_bindgen(js_name = checkTSpin)]
+    pub fn js_check_t_spin(&self, piece: TetPiece) -> TSpinResult {
+        self.check_t_spin(piece)
+    }
+    #[wasm_bindgen(js_name = place)]
+    pub fn js_place(&mut self, piece: TetPiece) -> bool {
+        self.place(piece)
+    }
+    #[wasm_bindgen(js_name = placeNClear)]
+    pub fn js_place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
+        self.place_n_clear(piece)
+    }
+    
 }
 impl Display for TetBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

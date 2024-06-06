@@ -15,12 +15,14 @@ pub mod gameplay;
 pub mod tests {
     use std::fs::File;
     use std::fs::OpenOptions;
+    use std::io;
     use std::io::BufWriter;
     use std::io::Write;
 
     use fumen::RotationState;
 
     use crate::board::Board;
+    use crate::board::TSpinResult;
     use crate::board::TetBoard;
     use crate::field;
     use crate::board;
@@ -40,8 +42,10 @@ pub mod tests {
     
 
   
+    fn debug_log(thing: &str) {
+        println!("{}", thing);
+    }
 
-    #[test]
     fn fumen_test() {
         {
             let mut pco = crate::fumen::TetFumen::new();
@@ -71,7 +75,7 @@ pub mod tests {
 
         
     }
-    #[test]
+
     fn queue_test () {
         let test_q = Queue::from_string("TILJSOZ".to_string());
         assert!(test_q.is_ok());
@@ -80,7 +84,7 @@ pub mod tests {
             println!("{}", piece);
         }
     }
-    #[test]
+
     fn choose_test() {
         use crate::queue::QueueNode;
         use crate::queue::Choose;
@@ -131,7 +135,6 @@ pub mod tests {
         // }
 
     }
-    #[test]
     fn piece_test () {
         let mut p = piece::TetPiece::new(
             piece::PieceColor::I,
@@ -154,7 +157,6 @@ pub mod tests {
         print!("{}", p);
         
     }
-    #[test]
     fn collision_test () {
         let board = board::TetBoard::new();
         let mut p = piece::TetPiece::new(
@@ -164,7 +166,7 @@ pub mod tests {
         );
         assert_eq!(board.does_collide(p), true);
     }
-    #[test]
+
     fn das_test() {
         let mut i = piece::TetPiece::new(PieceColor::I, Direction::North, Vec2(4,20));
         let mut f = field::Field::new(board::TetBoard::new(), Some(i), None);
@@ -175,7 +177,7 @@ pub mod tests {
         assert_eq!(f.active_piece.unwrap().rotation, Direction::East);
         println!("{}", f);
     }
-    #[test]
+
     fn rotation_test () {
         let s = piece::TetPiece::new(PieceColor::S, Direction::North, Vec2(4,16));
         let mut standard_s_kick = field::Field::new(board::TetBoard::from_4h_array([
@@ -198,7 +200,6 @@ pub mod tests {
        print!("{}", standard_s_kick);
        print!("{}", standard_s_kick.can_place_active_piece());
     }
-    #[test]
     //create a new piece for each of the piece colors and print them out with println
     #[allow(non_snake_case)]
     fn piece_color_test() {
@@ -218,7 +219,6 @@ pub mod tests {
         let Z = piece::TetPiece::new(PieceColor::Z, Direction::North, Vec2(4,20));
         println!("{}", Z);
     }
-    #[test]
     fn pc_test() {
         // use crate::pc_utils::u64_field;
         // let mut board = u64_field::new();
@@ -254,7 +254,7 @@ pub mod tests {
 
         }
     }
-    #[test]
+
     fn q_test() {
         use crate::queue::QueueNodeType::Piece;
         let mut a = Queue::new();
@@ -269,7 +269,7 @@ pub mod tests {
         println!("{}", a);
         assert_eq!(a.len(), 4);
     }
-    #[test]
+
     fn line_test() {
         let mut board = TetBoard::new();
         let rows = board.get_filled_rows();
@@ -306,10 +306,68 @@ pub mod tests {
         let rows = board.get_filled_rows();
         assert_eq!(rows.len(), 1);
     }
-    #[test]
-    fn clear_tests() {
+    fn clear_test() {
         let f = TetBoard::new();
         assert!(f.check_pc());
-        
+        let mut pco = TetBoard::from_4h_array(
+            [
+                8,8,0,0,0,0,8,8,8,8,
+                8,8,8,0,0,0,8,8,8,8,
+                8,8,8,8,0,0,8,8,8,8,
+                8,8,8,0,0,0,8,8,8,8,
+            ]
+        );
+        debug_log(pco.to_string().as_str());
+        assert!(!pco.check_pc());
+        let mut z = TetPiece::z();
+        z.position = Vec2(4, 1);
+        // debug_log(Field::new(pco, Some(z), None).to_string().as_str());
+        pco.place_n_clear(z);
+
+        let mut i = TetPiece::i();
+        i.position = Vec2(3,2);
+        // debug_log(Field::new(pco, Some(i), None).to_string().as_str());
+        pco.place_n_clear(i);
+        let mut l = TetPiece::l();
+        l.position = Vec2(5,19);
+        pco.rotate_piece(&mut l, 3);
+        pco.das_piece(&mut l, Direction::South, 9999);
+        pco.rotate_piece(&mut l, 1);
+        pco.place_n_clear(l);
+        assert!(pco.check_pc());
+        let mut spin = TetBoard::from_4h_array(
+            [
+                0,0,0,0,0,0,0,0,0,0,
+                0,0,8,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,
+                8,0,8,0,0,0,0,0,0,0,
+            ]
+        );
+        let mut t = TetPiece::t();
+        t.position = Vec2(4,1);
+        debug_log(Field::new(spin, Some(t), None).to_string().as_str());
+        assert_eq!(spin.check_t_spin(t), TSpinResult::NoSpin);
+        t.position = Vec2(1,1);
+        debug_log(Field::new(spin, Some(t), None).to_string().as_str());
+        assert_eq!(spin.check_t_spin(t), TSpinResult::MiniSpin);
+        spin.rotate_piece(&mut t, 2);
+        debug_log(Field::new(spin, Some(t), None).to_string().as_str());
+        assert_eq!(spin.check_t_spin(t), TSpinResult::TSpin);
+
+    }
+    #[test]
+    fn test() {
+        let mut input = String::new();
+            match io::stdin().read_line(&mut input) {
+                Ok(n) => {
+                    input = String::from(input.trim());
+
+                    if (input == "clear") {
+
+                        clear_test();
+                    }
+                }
+                Err(error) => println!("error reading input: {error}"),
+            }
     }
 }

@@ -2,7 +2,7 @@
 use std::{clone, fmt::{self, format, Write}};
 
 use wasm_bindgen::prelude::*;
-use crate::{board::{Board, ClearStruct, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
+use crate::{board::{Board, ClearStruct, TSpinResult, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
@@ -104,12 +104,25 @@ impl Field {
             Some(p) => {
                 let res = self.board.place_n_clear(p);
                 ret.0 = res.0;
-                ret.get_lines() = res.get_lines();
+                ret.set_lines(res.get_lines());
             },
             None => {}  
         }
         ret
     }   
+    #[wasm_bindgen(js_name = checkPC)]
+    pub fn check_pc(&self) -> bool {
+        self.board.check_pc()
+    }
+    #[wasm_bindgen(js_name = checkTSpin)]
+    pub fn check_t_spin(&self) -> TSpinResult {
+        if let Some(piece) = self.active_piece {
+            self.board.check_t_spin(piece)
+        } else {
+            TSpinResult::NoSpin
+        }
+        
+    }
 }
 impl fmt::Display for Field { 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
