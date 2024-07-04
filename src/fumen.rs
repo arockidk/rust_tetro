@@ -87,6 +87,7 @@ fn piece_color_to_fumen_piece_type(c: PieceColor) -> PieceType {
         PieceColor::J => PieceType::J,
         PieceColor::S => PieceType::S,
         PieceColor::B => PieceType::T,
+        PieceColor::G => panic!("PieceColor::G cannot be converted to PieceType"),
     }
 }
 fn direction_to_rotation_state(dir: Direction) -> RotationState {

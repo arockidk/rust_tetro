@@ -18,7 +18,8 @@ pub enum PieceColor {
     Z=4,
     T=5,
     J=6,
-    S=7
+    S=7,
+    G=8
 }
 pub fn is_piece_color(c: char) -> bool {
     c == 'I' || c == 'L' || c == 'O' || c == 'Z' || c == 'T' || c == 'J' || c == 'S'
@@ -35,6 +36,7 @@ pub fn piece_color_from_int(int: u8) -> PieceColor {
         5 => PieceColor::T,
         6 => PieceColor::J,
         7 => PieceColor::S,
+        8 => PieceColor::G,
         _ => PieceColor::T
     }
 }
@@ -49,6 +51,7 @@ pub fn piece_color_from_str(str: &str) -> PieceColor {
         "T" => PieceColor::T,
         "J" => PieceColor::J,
         "S" => PieceColor::S,
+        "G" => PieceColor::G,
         _ => PieceColor::T
     }
 }
@@ -62,7 +65,8 @@ pub fn piece_color_to_char(color: PieceColor) -> char {
         PieceColor::O => 'O',
         PieceColor::T => 'T',
         PieceColor::Z => 'Z',
-        PieceColor::S => 'S'
+        PieceColor::S => 'S',
+        PieceColor::G => 'X'
     }
 }
 pub fn color_str(color: PieceColor, str: String) -> String {
