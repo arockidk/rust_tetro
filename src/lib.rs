@@ -33,7 +33,7 @@ pub mod tests {
     use crate::piece::Direction;
     use crate::piece::TetPiece;
     use crate::queue::Queue;
-    use crate::queue::choose;
+    use crate::queue::Choose;
     use crate::piece;
     use crate::queue::QueueNode;
     use crate::queue::QueueNodeType;
@@ -92,7 +92,7 @@ pub mod tests {
         let choose = Choose::from_string(
             "*p4".to_string()
         );
-        assert!(choose.is_ok());
+        assert!(choose.is_some());
         let choose = choose.unwrap();
         // println!("{:?} {} {}", choose.pieces, choose.count, choose.inverse);
         assert_eq!(choose.to_string(), "*p4".to_string());
@@ -109,16 +109,23 @@ pub mod tests {
         //     i += 1;
         // }
         let ilsz = Queue::from_string(
-            "ILSZ,[^ILSZ]!,*p4".to_string()
+            "*p2,*p7,*p1".to_string()
         );
         assert!(ilsz.is_ok());
         let first_pc = ilsz.unwrap();
         // assert_eq!(first_pc.to_string(), "*p7,*p4".to_string());
         let mut i = 1;
-        for q in first_pc.possible_q_iter() {
-            println!("{}", i);  
+        let iter = first_pc.possible_q_iter();
+        println!("{}", iter.size());
+        for q in iter {
+            // println!("{} {}", i, q);  
             i += 1;
+            if (i % 10000 == 0) {
+                println!("{}", i);
+            }
         }
+        println!("{}", i);
+
         // let queues = choose.get_queues();
         // assert_eq!(queues.len(), 840);
         // for queue in queues {
@@ -199,6 +206,9 @@ pub mod tests {
        standard_s_kick.rotate_piece(1);
        print!("{}", standard_s_kick);
        print!("{}", standard_s_kick.can_place_active_piece());
+       let mut fm = TetFumen::new();
+       fm.add_page_rs().set_field(standard_s_kick);
+       println!("{}", fm.encode_fumen());
     }
     //create a new piece for each of the piece colors and print them out with println
     #[allow(non_snake_case)]
@@ -229,32 +239,53 @@ pub mod tests {
         // t.position += Vec2(1,0);
         // assert_eq!(board.does_collide(t), false);
         // assert_eq!(board.can_place(t), true);
-        let mut board = TetBoard::new();
+        let mut init_fumen = TetFumen::new();
+        init_fumen.decode_fumen(String::from("v115@9gilFewhglAtGewhBtR4EewhAtR4FewhJeAgH"));
+        let mut board = init_fumen.get_page_at(0).get_field().board.clone();
         let mut piece = TetPiece::new(PieceColor::T, Direction::North, Vec2(0,1));
-        let placements = board.get_piece_placements(piece);
+        let pos_pred = Some(
+            |p: &TetPiece| p.get_minos().iter().all(
+                |mino: &Vec2| mino.1 < 4
+            )
+        );
+        let placements = board.get_piece_placements(piece, pos_pred);
         println!("{:?}", placements);
-        let mut new_piece = TetPiece::new(PieceColor::J, Direction::North, Vec2(0,4));
+        
         let mut file = OpenOptions::new().write(true).open("log.txt").unwrap();
         let mut buff = BufWriter::new(file);
-        for placement in placements {
+        let mut fum = TetFumen::new();
 
+        for i in 0..placements.len() {
+            let placement = placements[i];
             piece.set_piece_pos(placement);
             board.place(piece);
-            let new_placements = board.get_piece_placements(new_piece);
-
+            let mut new_piece = TetPiece::new(PieceColor::J, Direction::North, Vec2(0,3));
+            let new_placements = board.get_piece_placements(new_piece,
+                pos_pred
+            );
             for new_placement in new_placements {
                 new_piece.set_piece_pos(new_placement);
 
                 board.place(new_piece);
-                // buff.write_all(board.to_string().as_bytes());
+                let mut new_piece1 = TetPiece::new(PieceColor::Z, Direction::North, Vec2(0,3));
+                let new_placements1 = board.get_piece_placements(new_piece1,
+                    pos_pred
+                );
+                for new_placement1 in new_placements1 {
+                    new_piece1.set_piece_pos(new_placement1);
+    
+                    board.place(new_piece1);
+                    fum.add_page_rs().set_field(Field::new(board, None, None));
+                    board.unplace(new_piece1);
+                    
+                }
                 board.unplace(new_piece);
                 
             }
             board.unplace(piece);
-
         }
+        buff.write_all(fum.encode_fumen().as_bytes());
     }
-
     fn q_test() {
         use crate::queue::QueueNodeType::Piece;
         let mut a = Queue::new();
@@ -269,7 +300,6 @@ pub mod tests {
         println!("{}", a);
         assert_eq!(a.len(), 4);
     }
-
     fn line_test() {
         let mut board = TetBoard::new();
         let rows = board.get_filled_rows();
@@ -362,10 +392,32 @@ pub mod tests {
                 Ok(n) => {
                     input = String::from(input.trim());
 
-                    if (input == "clear") {
-
+                    if input == "clear" {
                         clear_test();
+                    } else if input == "fumen" {
+                        fumen_test();
+                    } else if input == "queue" {
+                        queue_test();
+                    } else if input == "choose" {
+                        choose_test();
+                    } else if input == "piece" {
+                        piece_test();
+                    } else if input == "collision" {
+                        collision_test();
+                    } else if input == "das" {
+                        das_test();
+                    } else if input == "rotation" {
+                        rotation_test();
+                    } else if input == "piece_color" {
+                        piece_color_test();
+                    } else if input == "pc" {
+                        pc_test()
+                    } else if input == "q" {
+                        q_test();
+                    } else if input == "line" {
+                        line_test();
                     }
+                    
                 }
                 Err(error) => println!("error reading input: {error}"),
             }

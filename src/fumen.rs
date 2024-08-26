@@ -199,7 +199,7 @@ impl TetPage  {
         self.field = field;
         self.fumen_page.set_field_rs(inversed_field.board.get_tile_matrix().map(
             |v| v.map(|c| u8_to_cell_color(c))
-        )[1..24].try_into().unwrap());
+        )[0..23].try_into().unwrap());
         // println!("{}", self.fumen_page.field.map(
         //     |row| format!("{:?}\n", row.map(|c| cell_color_to_u8(c)))
         // ).join("\n")); 
@@ -234,12 +234,12 @@ impl TetPage  {
             comment: pg.get_comment().clone(),
             fumen_page: pg.clone(),
         };
-        for y in 0..24 {
+        for y in 0..23 {
             for x in 0..10 {
-                if y == 0 {
+                if y == -2 {
                     new_pg.field.board.set_tile(x, y, pg.get_garbage_row()[x as usize] as u8)
                 } else {
-                    new_pg.field.board.set_tile(x, y, pg.get_field()[23 - y as usize][x as usize] as u8)
+                    new_pg.field.board.set_tile(x, y, pg.get_field()[y as usize][x as usize] as u8)
                 }
             }
         }

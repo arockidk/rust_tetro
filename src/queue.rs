@@ -2,7 +2,7 @@
 use fumen::Piece;
 use wasm_bindgen::prelude::*;
 
-use crate::{math::{factorial, usize_factorial}, piece::{is_piece_color, piece_color_to_char, PieceColor, TetPiece}};
+use crate::{math::{factorial, usize_factorial}, piece::{invert_piece_vec, is_piece_color, piece_color_to_char, PieceColor, TetPiece}};
 use core::fmt;
 use std::{collections::{HashMap, HashSet}, fmt::Write, io::Cursor, iter::{self, Map}, ptr};
 
@@ -487,11 +487,15 @@ impl Queue {
                 } else {
                     return Err(InvalidQueueFormatError {  })
                 }
-                let choose = Choose {
+                let mut choose = Choose {
                     pieces,
-                    count,
-                    inverse
+                    count
                 };
+                if inverse {
+                    choose.pieces = invert_piece_vec(choose.pieces);
+                    choose.count = 7 - choose.count;
+                }
+                choose.sort();
                 base.push_back(QueueNode {
                     node_type: QueueNodeType::Choose,
                     choose: Some(choose),
@@ -648,8 +652,8 @@ impl Iterator for QueueChooseIterator<'_> {
                         base.push_back(node.isolated_clone());
                     } 
                     QueueNodeType::Choose => {
-                        let mut q = ChooseIterator::idxs_to_queue(
-                            self.states.get(&i).unwrap().clone(),
+                        let mut q = ChooseIterator::state_to_queue(
+                            self.states.get(&i).unwrap(),
                             node.isolated_clone().choose().clone()
                         );
                         base.append(q);
@@ -667,10 +671,10 @@ struct ChooseState {
     choose: Choose
 }
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[wasm_bindgen]
 pub struct Choose {
-    pub pieces: Vec<PieceColor>,
-    pub count: usize,
-    pub inverse: bool
+    pieces: Vec<PieceColor>,
+    pub count: usize
 }
 #[derive(Debug)]
 pub struct InvalidQueueFormatError {}
@@ -680,21 +684,15 @@ impl fmt::Display for InvalidQueueFormatError {
         f.write_str("invalid queue format")   
     }
 }
+#[wasm_bindgen]
 impl Choose {
-    pub fn new(pieces: Vec<PieceColor>, count: usize, inverse: bool) -> Result<Choose, InvalidQueueFormatError> {
+    #[wasm_bindgen(constructor)]
+    pub fn new(pieces: Vec<PieceColor>, count: usize) -> Choose {
         let mut choose = Choose {
             pieces: Vec::new(),
             count,
-            inverse
         };
-        for piece in pieces {
-            if !choose.pieces.contains(&piece) {
-                choose.pieces.push(piece);
-            } else {
-                return Err(InvalidQueueFormatError {});
-            }
-        }
-        Ok(choose)
+        choose
     }
     pub fn size(&self) -> usize {
         let n = self.pieces.len();
@@ -704,60 +702,12 @@ impl Choose {
             usize_factorial(n - r)
         
     }
+    
+    #[wasm_bindgen(js_name = getQueues)]
     pub fn get_queues(&self) -> Vec<Queue> {
-         
-        let mut ret: Vec<Queue> = Vec::new();
-        let state = ChooseState {
-            queue: Queue::new(),
-            choose: self.clone()
-        };
-        for i in 0..self.pieces.len() {
-            
-            let piece = state.choose.pieces[i];
-            let mut state_clone = state.clone();
-            let mut new = QueueNode {   
-                node_type: QueueNodeType::Piece,
-                choose: None,
-                piece: Some(piece),
-                next: None
-            };
-            state_clone.queue.push_back(new);
-            state_clone.choose.count -= 1;
-            state_clone.choose.pieces.remove(i);
-
-            ret.append(&mut self.get_queues0(state_clone));
-            
-            
-        }
-
-        ret
+        self.iter().collect()
     }
-    fn get_queues0(&self, state: ChooseState) -> Vec<Queue>{
-        let mut ret: Vec<Queue> = Vec::new();
-
-        for i in 0..state.choose.pieces.len() {
-            let piece = state.choose.pieces[i];
-            let mut state_clone = state.clone();
-            let mut new = QueueNode {   
-                node_type: QueueNodeType::Piece,
-                choose: None,
-                piece: Some(piece),
-                next: None
-            };
-
-            state_clone.queue.push_back(new);
-            state_clone.choose.count -= 1;
-            state_clone.choose.pieces.remove(i);
-            if state_clone.choose.count == 0 {
-                ret.push(state_clone.queue);
-            } else {
-                ret.append(&mut self.get_queues0(state_clone));
-            }
-            
-        }
-        ret
-    }
-    pub fn from_string(mut s: String) -> Result<Self, InvalidQueueFormatError> {
+    pub fn from_string(mut s: String) -> Option<Choose> {
         let mut pieces = Vec::new();
         let mut count = 0;
         let mut inverse = false;
@@ -774,11 +724,11 @@ impl Choose {
                 } else if c == '!' {
                     count = 7;
                 } else {
-                    return Err(InvalidQueueFormatError {});
+                    return None;
                 }
             } else if first == '[' {
                 if !s.contains(']') {
-                    return Err(InvalidQueueFormatError {});
+                    return None;
                 }
                 let mut i = 0;
                 let mut set_ended = false;
@@ -799,7 +749,7 @@ impl Choose {
                     }
                 }
                 if !set_ended {
-                    return Err(InvalidQueueFormatError {});
+                    return None;
                 } 
                 let c = str.chars().nth(i).unwrap();
                 if c == 'p' {
@@ -809,14 +759,19 @@ impl Choose {
                 }
 
             } else {
-                return Err(InvalidQueueFormatError {});
+                return None;
             }
         }
-        Ok(Choose {
+        let mut choose = Choose {
             pieces,
-            count,
-            inverse
-        })
+            count
+        };
+        if inverse {
+            choose.pieces = invert_piece_vec(choose.pieces);
+            choose.count = 7 - choose.count;
+        }
+        choose.sort();
+        Some(choose)
     }
     /**
      * Reorders the choose's pieces into TILJOSZ order. 
@@ -824,76 +779,90 @@ impl Choose {
     pub fn sort(&mut self) {
         self.pieces.sort()
     }
-    pub fn iter(&self) -> ChooseIterator<'_> {
+}
+impl Choose {
+    pub fn iter(&self) -> ChooseIterator {
         ChooseIterator::new(self)
     }
 }
 
-pub struct ChooseIterator<'a> {
-    choose: &'a Choose,
+pub struct ChooseIterator {
+    choose: Choose,
     state: Vec<usize>,
-    c: usize,
     first: bool
 }
-impl ExactSizeIterator for ChooseIterator<'_> {
+impl ExactSizeIterator for ChooseIterator {
     fn len(&self) -> usize {
         self.choose.size()
 
     }
 }
-impl ChooseIterator<'_> {
-    pub fn new (choose: &Choose) -> ChooseIterator {
+impl ChooseIterator {
+    pub fn new(choose: &Choose) -> ChooseIterator {
         
         ChooseIterator {
-            choose,
+            choose: choose.clone(),
             state: vec![0; choose.count],
-            c: 0,
             first: true
         }
     }
-    fn idxs_to_queue(idxs: Vec<usize>, choose: Choose) -> Queue {
+    fn state_to_queue(state: &Vec<usize>, choose: Choose) -> Queue {
         let mut choose = choose;
         choose.sort();
         let mut queue = Queue::new();
-        for idx in idxs {
+        for idx in state {
             queue.push_back(QueueNode {
                 node_type: QueueNodeType::Piece,
-                piece: Some(choose.pieces[idx]),
+                piece: Some(choose.pieces[*idx]),
                 choose: None,
                 next: None
             });
-            choose.pieces.remove(idx);
+            choose.pieces.remove(*idx);
         }
         queue
     }
+    fn check_state_fin(state: &Vec<usize>, choose: &Choose) -> bool {
+        for i in 0..state.len() {
+            if state[i] + 1 != choose.count - i {
+                return false
+            }
+        }
+        true
+    }
+    fn incr_state(state: &mut Vec<usize>, choose: &Choose) -> bool {
+        if Self::check_state_fin(state, choose) {
+            false
+        } else {
+            state[0] += 1;
+            let mut i = 0;
+            while (state[i] >= choose.pieces.len() - i) {
+                state[i] = 0;
+                i += 1;
+                if i == choose.count {
+                    return false
+                }
+                state[i] += 1;
+            }
+            return true;
+        }
+    }
 }
-impl<'a> Iterator for ChooseIterator<'a> {
+impl Iterator for ChooseIterator {
     type Item = Queue;
     fn next(&mut self) -> Option<Self::Item> {
         if self.choose.count == 0 {
             None
-        } else if self.c >= self.len() {
-            
+        } else if Self::check_state_fin(&self.state, &self.choose) {
             None
         } else if self.first {
-            self.c += 1;
             self.first = false;
-            return Some(ChooseIterator::idxs_to_queue(self.state.clone(), self.choose.clone()));
+            return Some(ChooseIterator::state_to_queue(&self.state, self.choose.clone()));
         } else {
-            self.c += 1;
-            let mut stop_incr = false;
-            let mut idx = self.state.len() - 1;
-            while !stop_incr {
-                
-                self.state[idx] += 1;
-                if self.state[idx] < self.choose.pieces.len() - idx  {
-                    stop_incr = true;
-                } else {
-                    self.state[idx] = 0;
-                    idx -= 1;
-                }
+            if Self::incr_state(&mut self.state, &self.choose) {
+                return Some(ChooseIterator::state_to_queue(&self.state, self.choose.clone()));
+            } else {
+                None
             }
-            return Some(ChooseIterator::idxs_to_queue(self.state.clone(), self.choose.clone()));
         }
         
     }
@@ -904,11 +873,7 @@ impl fmt::Display for Choose {
         if self.pieces.len() == 7 {
             str.write_str("*");
         } else {
-            if self.inverse { 
-                str.write_str("[^");
-            } else {
-                str.write_str("[");
-            }
+            str.write_str("[");
             for piece in &self.pieces { 
                 str.write_char(piece_color_to_char(piece.clone()));
             }
@@ -921,95 +886,3 @@ impl fmt::Display for Choose {
     }
 }
 
-pub fn choose(pieces: Vec<PieceColor>, count: usize, inverse: bool) -> Vec<Queue> {
-    (Choose {
-        pieces,
-        count,
-        inverse
-    }).get_queues()
-}
-impl Queue {
-    fn from(s: String) -> Result<Self, InvalidQueueFormatError> {
-        let mut chars = s.chars();
-        let mut queue = Queue::new();
-        let mut idx = 0;
-        while idx < s.len() {
-            let mut c = chars.nth(idx).unwrap();
-            if c == '[' || c == '*' {
-                let mut pieces = Vec::new();
-                let mut inverse = false;
-                let mut count = 0;
-                if c == '[' {
-                    idx += 1;
-                    if let Some(inv) = chars.next() {
-                        
-                        if inv == '^' {
-                            inverse = true;
-                            idx += 1;
-                        }
-                        
-                        while chars.nth(idx).unwrap() != ']' {
-                            c = chars.nth(idx).unwrap();
-                            if is_piece_color(c) {
-                                if pieces.contains(&PieceColor::from(c)) {
-                                    return Err(InvalidQueueFormatError {  })
-                                }
-                                pieces.push(PieceColor::from(c));
-                            } else {
-                                return Err(InvalidQueueFormatError {  })
-                            }
-                            idx += 1;
-                        }
-                    }
-                }
-                else if c == '*' {
-                    pieces = Vec::from(crate::piece::get_pieces());
-                }
-                idx += 1;
-                
-                c = chars.nth(idx).unwrap();
-                if c == '!' {
-                    count = pieces.len();
-                } else if c == 'p' {
-                    idx += 1;
-                    c = chars.nth(idx).unwrap();
-                    count = c.to_digit(10).unwrap() as usize;
-                } else {
-                    count = pieces.len();
-                }
-                let choose = Choose {
-                    pieces,
-                    count,
-                    inverse
-                };
-                queue.push_back(QueueNode {
-                    node_type: QueueNodeType::Choose,
-                    choose: Some(choose),
-                    piece: None,
-                    next: None
-                });
-                idx += 1;
-
-            } else if is_piece_color(c) {
-                queue.push_back(QueueNode {
-                    node_type: QueueNodeType::Piece,
-                    piece: Some(PieceColor::from(c)),
-                    choose: None,
-                    next: None
-                });
-                idx += 1;
-            } else if c == ',' {
-                idx += 1;
-            } else {
-                return Err(InvalidQueueFormatError {  })
-                
-            }
-            
-
-                
-            
-        }
-        Ok(queue)
-    }
-}
-    

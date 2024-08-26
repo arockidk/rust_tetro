@@ -4,7 +4,10 @@ use js_sys::{Array, Number};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::convert::{FromWasmAbi, IntoWasmAbi, RefFromWasmAbi};
 use core::fmt;
+use std::collections::HashSet;
+use std::hash::Hash;
 use std::ops::AddAssign;
+use std::vec;
 use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
 
@@ -20,6 +23,24 @@ pub enum PieceColor {
     J=6,
     S=7,
     G=8
+}
+static PIECES: [PieceColor; 7] = [
+    PieceColor::I,
+    PieceColor::L,
+    PieceColor::O,
+    PieceColor::Z,
+    PieceColor::T,
+    PieceColor::J,
+    PieceColor::S
+];
+pub fn invert_piece_vec(vec: Vec<PieceColor>) -> Vec<PieceColor> {
+    let mut ret = Vec::new();
+    for piece in PIECES {
+        if !vec.contains(&piece) {
+            ret.push(piece);
+        }
+    }
+    ret
 }
 pub fn is_piece_color(c: char) -> bool {
     c == 'I' || c == 'L' || c == 'O' || c == 'Z' || c == 'T' || c == 'J' || c == 'S'
@@ -360,6 +381,15 @@ impl TetPiece {
     #[wasm_bindgen(setter)]
     pub fn set_color(&mut self, color: PieceColor) {
         self.color = color;
+    }
+    #[wasm_bindgen(js_name = minoAbove)] 
+    pub fn mino_above(&self, y: i8) -> bool {
+        for mino in self.get_minos() {
+            if mino.1 > y.into() {
+                return true;
+            }
+        }
+        false
     }
     
 }

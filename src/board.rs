@@ -591,8 +591,27 @@ impl TetBoard {
     pub fn js_place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
         self.place_n_clear(piece)
     }
+    #[wasm_bindgen(js_name = noColorString)] 
+    pub fn no_color_string(&self) -> String {
+        let mut base = String::new();
+        for i in 0..self.height {
+            for j in 0..self.width {
+
+                let tile = self.tiles[((self.height - i - 1) * self.width + j) as usize];
+                let tile_color = piece_color_from_int(tile);
+                if tile == 8 {
+                    base.write_str("X");
+                } else {
+                    base.write_char(piece_color_to_char(tile_color));
+                }
+            }
+            base.write_char('\n');
+        }
+        base
+    }
     
 }
+
 impl Display for TetBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..self.height {
