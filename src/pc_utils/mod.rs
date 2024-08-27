@@ -141,6 +141,26 @@ impl TetPiece {
 }
 
 impl TetBoard {
+    fn check_piece_placement(&self, piece: &TetPiece, seen: &mut [bool; 2048], todo: &mut Vec<PiecePos>, placements: &mut Vec<PiecePos>) {
+        if !self.does_collide(*piece) {
+            let pos = PiecePos::from(*piece);
+            seen[pos.0 as usize] = true;
+            todo.push(pos);
+            if self.can_place(*piece) { 
+                placements.push(pos);
+            }
+        }
+    }
+    fn check_piece_placement_pred(&self, piece: &TetPiece, seen: &mut [bool; 2048], todo: &mut Vec<PiecePos>, placements: &mut Vec<PiecePos>, pred: impl Fn(&TetPiece) -> bool) {
+        if !self.does_collide(*piece) {
+            let pos = PiecePos::from(*piece);
+            seen[pos.0 as usize] = true;
+            todo.push(pos);
+            if self.can_place(*piece) && pred(piece) { 
+                placements.push(pos);
+            }
+        }
+    }
     pub fn get_piece_placements(&self, mut piece: TetPiece, pred: Option<impl Fn(&TetPiece) -> bool>) -> Vec<PiecePos> {
         let mut placements = Vec::new();
         let mut todo = Vec::new();
@@ -164,14 +184,7 @@ impl TetBoard {
         start_pos = PiecePos::from(piece);
         if pred.is_none() {
             piece.move_left(1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) { 
-                    placements.push(pos);
-                }
-            }   
+   
             piece.set_piece_pos(start_pos);
             piece.move_right(1);
             if !self.does_collide(piece) {
