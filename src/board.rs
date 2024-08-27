@@ -21,7 +21,7 @@ extern "C" {
 pub enum TSpinResult {
     NoSpin,
     MiniSpin,
-    TSpin
+    TSpin,
 }
 #[wasm_bindgen()]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -32,15 +32,14 @@ impl ClearStruct {
     }
     pub fn set_lines(&mut self, lines: Vec<isize>) {
         self.1 = lines;
-    } 
+    }
 }
 #[wasm_bindgen]
 impl ClearStruct {
     #[wasm_bindgen(js_name = "getLines")]
     pub fn get_lines(&self) -> Vec<isize> {
         self.1.clone()
-    } 
-    
+    }
 }
 pub trait Board {
     fn get_tile_array(self: &Self) -> [u8; 240];
@@ -66,7 +65,6 @@ pub trait Board {
     fn unplace(&mut self, piece: TetPiece) -> bool;
     fn check_pc(&self) -> bool;
     fn check_t_spin(&self, piece: TetPiece) -> TSpinResult;
-    
 }
 
 #[wasm_bindgen]
@@ -190,6 +188,10 @@ impl Board for TetBoard {
         let old_rot: usize = piece.rotation as usize;
         let new_rot = (piece.rotation + mod_rot as i64) % 4;
         test_piece.rotation = Direction::from_int(new_rot.into());
+        if (piece.color() == PieceColor::O) {
+            piece.rotation = test_piece.rotation;
+            return true;
+        }
         if mod_rot == 2 {
             // 180 rotation
             let kicks = get_180_kicks(*piece);
@@ -278,7 +280,6 @@ impl Board for TetBoard {
                         piece.position += Vec2(0, 1);
                         break;
                     }
-
                 }
             }
             _ => {}
@@ -288,7 +289,6 @@ impl Board for TetBoard {
     fn can_place(&self, piece: TetPiece) -> bool {
         if self.does_collide(piece) {
             false
-            
         } else {
             let mut test = piece.clone();
             let a = !self.apply_gravity(&mut test, 1);
@@ -301,7 +301,6 @@ impl Board for TetBoard {
         if self.does_collide(*piece) {
             piece.position += Vec2(0, 1 * force);
             false
-
         } else {
             true
         }
@@ -330,7 +329,6 @@ impl Board for TetBoard {
             return false;
         }
         for mino in piece.get_minos() {
-            
             self.set_tile(
                 mino.0.try_into().unwrap(),
                 mino.1.try_into().unwrap(),
@@ -340,15 +338,10 @@ impl Board for TetBoard {
         true
     }
     fn unplace(&mut self, piece: TetPiece) -> bool {
-        
         for mino in piece.get_minos() {
-            
-            self.clear_tile(
-                mino.0.try_into().unwrap(),
-                mino.1.try_into().unwrap(),
-            );
+            self.clear_tile(mino.0.try_into().unwrap(), mino.1.try_into().unwrap());
         }
-        
+
         true
     }
     fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
@@ -364,18 +357,15 @@ impl Board for TetBoard {
     }
     fn get_filled_rows(&self) -> Vec<isize> {
         let mut rows = Vec::new();
-        
+
         for i in (0..self.height).rev() {
             let mut filled = true;
             for j in 0..10 {
-                let tile = self.tiles[
-                    (i * 10 + j) as usize
-                ];
+                let tile = self.tiles[(i * 10 + j) as usize];
                 if tile == 0 {
                     filled = false;
                     break;
                 }
-                
             }
             if filled {
                 rows.push(i as isize);
@@ -383,7 +373,7 @@ impl Board for TetBoard {
         }
         rows
     }
-    
+
     fn check_pc(&self) -> bool {
         let mut clone = self.clone();
         for row in self.get_filled_rows() {
@@ -397,9 +387,8 @@ impl Board for TetBoard {
             }
         }
         pc
-        
     }
-    
+
     fn check_t_spin(&self, piece: TetPiece) -> TSpinResult {
         let mut res = TSpinResult::NoSpin;
         if piece.color() == PieceColor::T {
@@ -430,17 +419,17 @@ impl Board for TetBoard {
                     if tl == 1 && tr == 1 {
                         res = TSpinResult::TSpin;
                     }
-                },
+                }
                 Direction::East => {
                     if tr == 1 && br == 1 {
                         res = TSpinResult::TSpin;
                     }
-                },
+                }
                 Direction::South => {
                     if bl == 1 && br == 1 {
                         res = TSpinResult::TSpin;
                     }
-                },
+                }
                 Direction::West => {
                     if tl == 1 && bl == 1 {
                         res = TSpinResult::TSpin;
@@ -450,17 +439,17 @@ impl Board for TetBoard {
         }
         res
     }
-    
+
     fn clear_row(&mut self, row: isize) {
         let conv = row as usize;
         if row < self.height {
             for i in row..23 {
                 for j in 0..10 {
                     let above = self.get_tile(j, i + 1);
-    
+
                     self.clear_tile(j, i);
                     self.set_tile(j, i, above);
-                }     
+                }
             }
         }
     }
@@ -578,7 +567,7 @@ impl TetBoard {
     #[wasm_bindgen(js_name = checkPC)]
     pub fn js_check_pc(&self) -> bool {
         self.check_pc()
-    }  
+    }
     #[wasm_bindgen(js_name = checkTSpin)]
     pub fn js_check_t_spin(&self, piece: TetPiece) -> TSpinResult {
         self.check_t_spin(piece)
@@ -591,12 +580,11 @@ impl TetBoard {
     pub fn js_place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
         self.place_n_clear(piece)
     }
-    #[wasm_bindgen(js_name = noColorString)] 
+    #[wasm_bindgen(js_name = noColorString)]
     pub fn no_color_string(&self) -> String {
         let mut base = String::new();
         for i in 0..self.height {
             for j in 0..self.width {
-
                 let tile = self.tiles[((self.height - i - 1) * self.width + j) as usize];
                 let tile_color = piece_color_from_int(tile);
                 if tile == 8 {
@@ -609,14 +597,12 @@ impl TetBoard {
         }
         base
     }
-    
 }
 
 impl Display for TetBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..self.height {
             for j in 0..self.width {
-
                 let tile = self.tiles[((self.height - i - 1) * self.width + j) as usize];
                 let tile_color = piece_color_from_int(tile);
                 if tile == 8 {

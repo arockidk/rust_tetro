@@ -128,7 +128,7 @@ impl u64_board {
         piece.position.0 = 1;
         self.das_piece(&mut piece, Direction::South, 1000);
         println!("{}", Field::new(self.as_board(), Some(piece), None));
-        
+
         placements
 
     }
@@ -141,9 +141,52 @@ impl TetPiece {
 }
 
 impl TetBoard {
-    fn check_piece_placement(&self, piece: &TetPiece, seen: &mut [bool; 2048], todo: &mut Vec<PiecePos>, placements: &mut Vec<PiecePos>) {
+    pub fn check_piece_placement(&self, piece: &TetPiece, seen: &mut [bool; 2048], todo: &mut Vec<PiecePos>, placements: &mut Vec<PiecePos>) {
         if !self.does_collide(*piece) {
             let pos = PiecePos::from(*piece);
+            if seen[pos.0 as usize] {
+                return
+            }
+            match piece.color() {
+                PieceColor::Z | PieceColor::S 
+                | PieceColor::I => {
+                    // println!("{:?} {} {} {} {}", piece, pos.0 & !0b11, pos.0 & 0b11, ((pos.0 + 2) % 4), ((pos.0 & !0b11) + ((pos.0 + 2) % 4)));
+                    let mut idx = pos.0;
+                            let offset = ((pos.0 + 2) % 4);
+                    idx &= !0b11;
+                    idx += offset;
+                    match pos.0 % 4 {
+                        0 => {
+                            idx += 1 << 2;
+                        },
+                        1 => {
+                            idx += 1 << 7;
+                        },
+                        2 => {
+                            idx -= 1 << 2;
+                        },
+                        3 => {
+                            idx -= 1 << 7;
+                        },
+                        _ => {}
+                    }
+                    if seen[idx as usize] {
+                        return
+                    }
+                },
+                PieceColor::O => {
+                    if seen[((pos.0 & !0b11) + ((pos.0 + 1) % 4)) as usize] {
+                        return;
+                    }
+                    if seen[((pos.0 & !0b11) + ((pos.0 + 2) % 4)) as usize] {
+                        return;
+                    }
+                    if seen[((pos.0 & !0b11) + ((pos.0 + 3) % 4)) as usize] {
+                        return;
+                    }
+                },
+                _ => ()
+            }
             seen[pos.0 as usize] = true;
             todo.push(pos);
             if self.can_place(*piece) { 
@@ -151,24 +194,68 @@ impl TetBoard {
             }
         }
     }
-    fn check_piece_placement_pred(&self, piece: &TetPiece, seen: &mut [bool; 2048], todo: &mut Vec<PiecePos>, placements: &mut Vec<PiecePos>, pred: impl Fn(&TetPiece) -> bool) {
+    pub fn check_piece_placement_pred(&self, piece: &TetPiece, seen: &mut [bool; 2048], todo: &mut Vec<PiecePos>, placements: &mut Vec<PiecePos>, pred: &impl Fn(&TetPiece) -> bool) {
         if !self.does_collide(*piece) {
             let pos = PiecePos::from(*piece);
+            if seen[pos.0 as usize] {
+                return
+            }
+            match piece.color() {
+                PieceColor::Z | PieceColor::S 
+                | PieceColor::I => {
+                    //println!("{:?} {} {} {} {}", piece, pos.0 & !0b11, pos.0 & 0b11, ((pos.0 + 2) % 4), ((pos.0 & !0b11) + ((pos.0 + 2) % 4)));
+                    let mut idx = pos.0;
+                            let offset = ((pos.0 + 2) % 4);
+                    idx &= !0b11;
+                    idx += offset;
+                    match pos.0 % 4 {
+                        0 => {
+                            idx += 1 << 2;
+                        },
+                        1 => {
+                            idx += 1 << 7;
+                        },
+                        2 => {
+                            idx -= 1 << 2;
+                        },
+                        3 => {
+                            idx -= 1 << 7;
+                        },
+                        _ => {}
+                    }
+                    if seen[idx as usize] {
+                        return
+                    }
+                },
+                PieceColor::O => {
+                    if seen[((pos.0 & !0b11) + ((pos.0 + 1) % 4)) as usize] {
+                        return;
+                    }
+                    if seen[((pos.0 & !0b11) + ((pos.0 + 2) % 4)) as usize] {
+                        return;
+                    }
+                    if seen[((pos.0 & !0b11) + ((pos.0 + 3) % 4)) as usize] {
+                        return;
+                    }
+                },
+                _ => ()
+            }
             seen[pos.0 as usize] = true;
             todo.push(pos);
             if self.can_place(*piece) && pred(piece) { 
                 placements.push(pos);
             }
+
         }
     }
-    pub fn get_piece_placements(&self, mut piece: TetPiece, pred: Option<impl Fn(&TetPiece) -> bool>) -> Vec<PiecePos> {
+    pub fn get_piece_placements(&self, mut piece: TetPiece) -> Vec<PiecePos> {
         let mut placements = Vec::new();
         let mut todo = Vec::new();
         let mut seen = [false; 32 * 16 * 4];
         let mut start_pos = PiecePos::from(piece);
         piece.set_piece_pos(start_pos);
         while self.does_collide(piece) {
-            
+
             if piece.rotation.to_i8() + 1 > 3 {
                 piece.rotation = Direction::North;
                 piece.position.0 += 1;
@@ -181,252 +268,107 @@ impl TetBoard {
             }
 
         }
-        start_pos = PiecePos::from(piece);
-        if pred.is_none() {
-            piece.move_left(1);
-   
-            piece.set_piece_pos(start_pos);
-            piece.move_right(1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) { 
-                    placements.push(pos);
-                }
-            } 
-            piece.set_piece_pos(start_pos);
-            piece.apply_gravity(1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) { 
-                    placements.push(pos);
-                }
-            } 
-            piece.set_piece_pos(start_pos);
-            self.rotate_piece(&mut piece, 1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) { 
-                    placements.push(pos);
-                }
-            }
-            piece.set_piece_pos(start_pos);
-            self.rotate_piece(&mut piece, 3);
-            if !self.does_collide(piece) {
-                
-                let pos = PiecePos::from(piece);
-                
-                seen[pos.0 as usize] = true;  
-                
-                todo.push(pos);
-                if self.can_place(piece) { 
-                    placements.push(pos);
-                }
-            } 
-            
-            let mut i = 0;
-            while todo.len() > 0{
-                if let Some(mut start_pos) = todo.pop() {
-                    i += 1;
-                    
-                piece.set_piece_pos(start_pos);
-        //         println!("{} {}aaaaaa", Field::new(self.clone(), Some(piece), None), start_pos);
-                    piece.move_left(1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) { 
-                                placements.push(pos);
-                            }
-                        }
+        self.check_piece_placement(&piece, &mut seen, &mut todo, &mut placements);
 
-                    } 
-                    piece.set_piece_pos(start_pos);
-                    piece.move_right(1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    } 
-                    piece.set_piece_pos(start_pos);
-                    piece.apply_gravity(1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    } 
-                    piece.set_piece_pos(start_pos);
-                    self.rotate_piece(&mut piece, 1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    }
-                    piece.set_piece_pos(start_pos);
-                    self.rotate_piece(&mut piece, 3);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    } 
-                }
-                
-            }
-        } else {
-            let predicate = pred.unwrap();
-            piece.move_left(1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) && predicate(&piece) { 
-                    placements.push(pos);
-                }
-            }   
-            piece.set_piece_pos(start_pos);
-            piece.move_right(1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) && predicate(&piece) { 
-                    placements.push(pos);
-                }
-            } 
-            piece.set_piece_pos(start_pos);
-            piece.apply_gravity(1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) && predicate(&piece) { 
-                    placements.push(pos);
-                }
-            } 
-            piece.set_piece_pos(start_pos);
-            self.rotate_piece(&mut piece, 1);
-            if !self.does_collide(piece) {
-                let pos = PiecePos::from(piece);
-                seen[pos.0 as usize] = true;
-                todo.push(pos);
-                if self.can_place(piece) && predicate(&piece) { 
-                    placements.push(pos);
-                }
-            }
-            piece.set_piece_pos(start_pos);
-            self.rotate_piece(&mut piece, 3);
-            if !self.does_collide(piece) {
-                
-                let pos = PiecePos::from(piece);
-                
-                seen[pos.0 as usize] = true;  
-                
-                todo.push(pos);
-                if self.can_place(piece) && predicate(&piece) { 
-                    placements.push(pos);
-                }
-            } 
-            
-            let mut i = 0;
-            while todo.len() > 0{
-                if let Some(mut start_pos) = todo.pop() {
-                    i += 1;
-                    
-                piece.set_piece_pos(start_pos);
-        //         println!("{} {}aaaaaa", Field::new(self.clone(), Some(piece), None), start_pos);
-                    piece.move_left(1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) && predicate(&piece) { 
-                                placements.push(pos);
-                            }
-                        }
+        let mut i = 0;
+        while todo.len() > 0 {
+            if let Some(mut start_pos) = todo.pop() {
+                i += 1;
 
-                    } 
-                    piece.set_piece_pos(start_pos);
-                    piece.move_right(1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) && predicate(&piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    } 
-                    piece.set_piece_pos(start_pos);
-                    piece.apply_gravity(1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) && predicate(&piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    } 
-                    piece.set_piece_pos(start_pos);
-                    self.rotate_piece(&mut piece, 1);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) && predicate(&piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    }
-                    piece.set_piece_pos(start_pos);
-                    self.rotate_piece(&mut piece, 3);
-                    if !self.does_collide(piece) {
-                        let pos = PiecePos::from(piece);
-                        if !(seen[pos.0 as usize]) {
-                            seen[pos.0 as usize] = true;
-                            todo.push(pos);
-                            if self.can_place(piece) && predicate(&piece) { 
-                                placements.push(pos);
-                            }
-                        }
-                    } 
-                }
-                
+                piece.set_piece_pos(start_pos);
+    //         println!("{} {}aaaaaa", Field::new(self.clone(), Some(piece), None), start_pos);
+                piece.move_left(1);
+                self.check_piece_placement(&piece, &mut seen, &mut todo, &mut placements);
+                piece.set_piece_pos(start_pos);
+                piece.move_right(1);
+                self.check_piece_placement(&piece, &mut seen, &mut todo, &mut placements);
+                piece.set_piece_pos(start_pos);
+                piece.apply_gravity(1);
+                self.check_piece_placement(&piece, &mut seen, &mut todo, &mut placements);
+                piece.set_piece_pos(start_pos);
+                self.rotate_piece(&mut piece, 1);
+                self.check_piece_placement(&piece, &mut seen, &mut todo, &mut placements);
+                piece.set_piece_pos(start_pos);
+                self.rotate_piece(&mut piece, 2);
+                self.check_piece_placement(&piece, &mut seen, &mut todo, &mut placements);
+                piece.set_piece_pos(start_pos);
+                self.rotate_piece(&mut piece, 3);
+                self.check_piece_placement(&piece, &mut seen, &mut todo, &mut placements);
+
             }
         }
-        
+
+        placements 
+    }
+    pub fn get_piece_placements_pred(&self, mut piece: TetPiece, pred: &impl Fn(&TetPiece) -> bool) -> Vec<PiecePos> {
+        let mut placements = Vec::new();
+        let mut todo = Vec::new();
+        let mut seen = [false; 32 * 16 * 4];
+        let mut start_pos = PiecePos::from(piece);
+        piece.set_piece_pos(start_pos);
+        while self.does_collide(piece) {
+            if piece.rotation.to_i8() + 1 > 3 {
+                piece.rotation = Direction::North;
+                piece.position.0 += 1;
+                if piece.position.0 > 9 {
+                    piece.position.1 += 1;
+                    piece.position.0 = 0;
+                }
+            } else {
+                piece.rotation += 1;
+            }
+
+        }
+
+        piece.move_left(1);
+        self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+        piece.set_piece_pos(start_pos);
+        piece.move_right(1);
+        self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+        piece.set_piece_pos(start_pos);
+        piece.apply_gravity(1);
+        self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+        piece.set_piece_pos(start_pos);
+        self.rotate_piece(&mut piece, 1);
+        self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+        piece.set_piece_pos(start_pos);
+        self.rotate_piece(&mut piece, 2);
+        self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+        piece.set_piece_pos(start_pos);
+        self.rotate_piece(&mut piece, 3);
+        self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+
+        let mut i = 0;
+        while todo.len() > 0 {
+            if let Some(mut start_pos) = todo.pop() {
+                i += 1;
+
+                piece.set_piece_pos(start_pos);
+    //         println!("{} {}aaaaaa", Field::new(self.clone(), Some(piece), None), start_pos);
+                piece.move_left(1);
+                self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+                piece.set_piece_pos(start_pos);
+                piece.move_right(1);
+                self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+                piece.set_piece_pos(start_pos);
+                piece.apply_gravity(1);
+                self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+                piece.set_piece_pos(start_pos);
+                self.rotate_piece(&mut piece, 1);
+                self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+                piece.set_piece_pos(start_pos);
+                self.rotate_piece(&mut piece, 2);
+                self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+                piece.set_piece_pos(start_pos);
+                self.rotate_piece(&mut piece, 3);
+                self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, pred);
+
+            }
+
+        }
+
         placements 
     }
 }
 use crate::queue::Queue;
+

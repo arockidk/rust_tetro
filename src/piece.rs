@@ -117,7 +117,7 @@ pub fn piece_color_from_char(c: char) -> PieceColor {
         'Z' => PieceColor::Z,
         'S' => PieceColor::S,
         _ => PieceColor::T
-        
+
     }
 }
 #[wasm_bindgen]
@@ -209,7 +209,7 @@ static BLOCKS: [PieceMinos; 7] = [
     [
                                   Vec2( 1, 1),
         Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
-        
+
     ],
     // O
     [
@@ -222,28 +222,28 @@ static BLOCKS: [PieceMinos; 7] = [
     [
         Vec2(-1, 1), Vec2( 0, 1),
                      Vec2( 0, 0), Vec2( 1, 0), 
-        
+
     ],
     // T
     [
                      Vec2( 0, 1),
         Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
-        
+
     ],
     // J
     [
         Vec2(-1, 1),
         Vec2(-1, 0), Vec2( 0, 0), Vec2( 1, 0), 
-        
+
     ],
-    
+
     // S
     [
                      Vec2( 0, 1), Vec2( 1, 1), 
         Vec2(-1, 0), Vec2( 0, 0),
-                                            
+
     ],
-    
+
 
 ];
 
@@ -272,11 +272,11 @@ impl fmt::Display for TetPiece {
                 (mino.0 - self.position.0 + 1),
                 (mino.1 - self.position.1 + 2)
             );
-            
+
             str_matrix[pos.1 as usize][pos.0 as usize] = coloured.as_str();
-            
+
             // println!("{} {} {} {}", mino.0, self.position.0, mino.1, self.position.1);
-            
+
         }
         for row in str_matrix {
             for char in row {
@@ -297,7 +297,7 @@ impl TetPiece {
             color,
             rotation,
             position
-            
+
         };
         return piece;
     }
@@ -391,7 +391,7 @@ impl TetPiece {
         }
         false
     }
-    
+
 }
 impl TetPiece {
     pub fn get_raw_minos(&self) -> PieceMinos {
@@ -399,21 +399,23 @@ impl TetPiece {
         for i in 0..4 {
             let mino = &mut minos[i as usize];
             let temp = mino.0;
-            match self.rotation { 
-                Direction::North => {}
-                Direction::East => {
-                        mino.0 = mino.1;
-                        mino.1 = -temp;
-                    }
-                Direction::South => {
-                        mino.0 *= -1;
-                        mino.1 *= -1;
-                    }
-                Direction::West => {
-                        mino.0 = -mino.1;
-                        mino.1 = temp;
-                    }
-            } 
+            if self.color != PieceColor::O {
+                match self.rotation { 
+                    Direction::North => {}
+                    Direction::East => {
+                            mino.0 = mino.1;
+                            mino.1 = -temp;
+                        }
+                    Direction::South => {
+                            mino.0 *= -1;
+                            mino.1 *= -1;
+                        }
+                    Direction::West => {
+                            mino.0 = -mino.1;
+                            mino.1 = temp;
+                        }
+                } 
+            }
         }
         return minos;
     }
@@ -433,4 +435,3 @@ pub fn get_pieces() -> [PieceColor; 7] {
 }
 
 
-    
