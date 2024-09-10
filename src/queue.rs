@@ -136,6 +136,30 @@ impl QueueNode {
             None
         }
     }
+    pub fn pop_at(&mut self, mut idx: usize) -> Option<QueueNode> {
+        if idx >= self.len() {
+            return None
+        }
+        if idx == 0 {
+            return None
+        }
+        let end: bool = idx == self.len() - 1;
+        let mut node = Box::new(self.clone());
+        while idx > 1 {
+            idx -= 1;
+            node = node.next();
+        }
+        if end {
+            let ret_ref = node.next();
+            node.next = None;
+            Some(*ret_ref)
+        } else {
+            let mut ret_ref = node.next();
+            node.next = ret_ref.next;
+            ret_ref.next = None;
+            Some(*ret_ref)
+        }
+    }
     pub fn at(&self, index: usize) -> Option<&QueueNode> {
         if index == 0 {
             return Some(self);
@@ -283,6 +307,7 @@ impl Queue {
     pub fn new() -> Queue {
         Queue {head: None}
     }
+    
     pub fn at(&self, idx: i32) -> Option<QueueNode> {
         if let Some(ref head) = self.head {
             if let Some(ret) = head.at(idx.try_into().unwrap()) {
@@ -381,6 +406,9 @@ impl Queue {
 
 }
 impl Queue {
+    pub fn pop_at(&mut self, idx: usize) -> Option<QueueNode> { 
+        self.head().pop_at(idx)
+    }
     pub fn push_back(&mut self, node: QueueNode) {
         if let Some(ref mut head) = self.head {
             head.push_back(node);

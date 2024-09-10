@@ -1,11 +1,11 @@
 
-use std::{clone, fmt::{self, format, Write}};
+use std::{clone, default, fmt::{self, format, Write}};
 
 use wasm_bindgen::prelude::*;
 use crate::{board::{Board, ClearStruct, TSpinResult, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
 
 #[wasm_bindgen]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 
 pub struct Field {
     pub board: TetBoard,
@@ -18,6 +18,11 @@ extern "C" {
     fn log(s: &str);
 }
 
+impl Default for Field {
+    fn default() -> Self {
+        Self { board: Default::default(), active_piece: Default::default(), hold: Default::default() }
+    }
+}
 #[wasm_bindgen]
 impl Field {
     #[wasm_bindgen(constructor)]
@@ -25,10 +30,13 @@ impl Field {
         Field {board, active_piece, hold}
         
     }
-    
+    #[wasm_bindgen(js_name = fromBoard)]
+    pub fn from_board(board: TetBoard) -> Self {
+        return Self::new(board, None, None);
+    }
 
     #[wasm_bindgen(js_name = canPlaceActivePiece)]
-    pub fn can_place_active_piece(&self) -> bool { 
+    pub fn can_place_active_piece(&mut self) -> bool { 
         match self.active_piece {
             Some(ref p) => {
                 let a = self.board.can_place(p.clone());

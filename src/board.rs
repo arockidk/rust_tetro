@@ -41,6 +41,7 @@ impl ClearStruct {
         self.1.clone()
     }
 }
+pub struct ClearedLine(pub isize, pub Vec<PieceColor>);
 pub trait Board {
     fn get_tile_array(self: &Self) -> [u8; 240];
     fn get_tile_matrix(self: &Self) -> [[u8; 10]; 24];
@@ -48,33 +49,39 @@ pub trait Board {
     fn from_4h_array(arr: [u8; 40]) -> Self;
     fn tile_occupied(&self, x: isize, y: isize) -> bool;
     fn in_bounds(&self, position: Vec2) -> bool;
-    fn does_collide(&self, piece: TetPiece) -> bool;
-    fn rotate_piece(&self, piece: &mut TetPiece, rotation: u8) -> bool;
-    fn das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8;
-    fn apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool;
-    fn move_left(&self, piece: &mut TetPiece, amount: i32) -> bool;
-    fn move_right(&self, piece: &mut TetPiece, amount: i32) -> bool;
-    fn can_place(&self, piece: TetPiece) -> bool;
+    fn does_collide(&mut self, piece: TetPiece) -> bool;
+    fn rotate_piece(&mut self, piece: &mut TetPiece, rotation: u8) -> bool;
+    fn das_piece(&mut self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8;
+    fn apply_gravity(&mut self, piece: &mut TetPiece, force: i32) -> bool;
+    fn move_left(&mut self, piece: &mut TetPiece, amount: i32) -> bool;
+    fn move_right(&mut self, piece: &mut TetPiece, amount: i32) -> bool;
+    fn can_place(&mut self, piece: TetPiece) -> bool;
     fn set_tile(&mut self, x: isize, y: isize, value: u8);
     fn get_tile(&self, x: isize, y: isize) -> u8;
     fn clear_tile(&mut self, x: isize, y: isize);
     fn place(&mut self, piece: TetPiece) -> bool;
     fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct;
     fn get_filled_rows(&self) -> Vec<isize>;
-    fn clear_row(&mut self, row: isize);
+    fn clear_row(&mut self, row: isize) -> ClearedLine;
     fn unplace(&mut self, piece: TetPiece) -> bool;
     fn check_pc(&self) -> bool;
     fn check_t_spin(&self, piece: TetPiece) -> TSpinResult;
+    fn refill_rows(&mut self, rows: Vec<ClearedLine>);
+    fn place_clone(&self, piece: TetPiece) -> Self;
 }
 
 #[wasm_bindgen]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct TetBoard {
     tiles: [u8; 240],
     pub height: isize,
     pub width: isize,
 }
-
+impl Default for TetBoard {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Board for TetBoard {
     fn get_tile_array(self: &TetBoard) -> [u8; 240] {
         return self.tiles;
@@ -160,7 +167,7 @@ impl Board for TetBoard {
             self.tiles[y * 10 + x] = 0;
         }
     }
-    fn does_collide(&self, piece: TetPiece) -> bool {
+    fn does_collide(&mut self, piece: TetPiece) -> bool {
         let mut minos = piece.get_minos();
         // println!("{:?}", piece.position);
         // println!("{:?}", minos.map(|
@@ -182,7 +189,7 @@ impl Board for TetBoard {
     fn in_bounds(&self, pos: Vec2) -> bool {
         return pos.0 > -1 && pos.0 < 10 && pos.1 > 0 && pos.1 < 24;
     }
-    fn rotate_piece(&self, piece: &mut TetPiece, rotation: u8) -> bool {
+    fn rotate_piece(&mut self, piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
         let mod_rot = rotation % 4;
         let old_rot: usize = piece.rotation as usize;
@@ -239,7 +246,7 @@ impl Board for TetBoard {
         return false;
     }
 
-    fn das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 {
+    fn das_piece(&mut self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 {
         let mut ret = 0;
         let original = piece.position;
         match direction {
@@ -286,7 +293,7 @@ impl Board for TetBoard {
         }
         ret
     }
-    fn can_place(&self, piece: TetPiece) -> bool {
+    fn can_place(&mut self, piece: TetPiece) -> bool {
         if self.does_collide(piece) {
             false
         } else {
@@ -296,7 +303,7 @@ impl Board for TetBoard {
             a
         }
     }
-    fn apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool {
+    fn apply_gravity(&mut self, piece: &mut TetPiece, force: i32) -> bool {
         piece.position -= Vec2(0, 1 * force);
         if self.does_collide(*piece) {
             piece.position += Vec2(0, 1 * force);
@@ -305,7 +312,7 @@ impl Board for TetBoard {
             true
         }
     }
-    fn move_left(&self, piece: &mut TetPiece, amount: i32) -> bool {
+    fn move_left(&mut self, piece: &mut TetPiece, amount: i32) -> bool {
         piece.position += Vec2(-amount, 0);
         if self.does_collide(*piece) {
             piece.position -= Vec2(-amount, 0);
@@ -314,7 +321,7 @@ impl Board for TetBoard {
             true
         }
     }
-    fn move_right(&self, piece: &mut TetPiece, amount: i32) -> bool {
+    fn move_right(&mut self, piece: &mut TetPiece, amount: i32) -> bool {
         piece.position += Vec2(amount, 0);
         if self.does_collide(*piece) {
             piece.position -= Vec2(amount, 0);
@@ -325,7 +332,14 @@ impl Board for TetBoard {
     }
 
     fn place(&mut self, piece: TetPiece) -> bool {
+        let filled = self.get_filled_rows();
+        let mut rows = Vec::new();
+        for row in filled {
+            rows.push(self.clear_row(row));
+
+        }
         if (!self.can_place(piece)) {
+            self.refill_rows(rows);
             return false;
         }
         for mino in piece.get_minos() {
@@ -335,13 +349,21 @@ impl Board for TetBoard {
                 piece.color() as u8,
             );
         }
+        rows.reverse();
+        self.refill_rows(rows);
         true
     }
     fn unplace(&mut self, piece: TetPiece) -> bool {
+        let filled = self.get_filled_rows();
+        let mut rows = Vec::new();
+        for row in filled {
+            rows.push(self.clear_row(row));
+
+        }
         for mino in piece.get_minos() {
             self.clear_tile(mino.0.try_into().unwrap(), mino.1.try_into().unwrap());
         }
-
+        self.refill_rows(rows);
         true
     }
     fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
@@ -440,18 +462,45 @@ impl Board for TetBoard {
         res
     }
 
-    fn clear_row(&mut self, row: isize) {
+    fn clear_row(&mut self, row: isize) -> ClearedLine {
         let conv = row as usize;
+        let mut ret = Vec::with_capacity(self.width.try_into().unwrap());
+        for j in 0..self.width {
+            ret.push(piece_color_from_int(self.get_tile(j, row)));
+        }
         if row < self.height {
             for i in row..23 {
                 for j in 0..10 {
                     let above = self.get_tile(j, i + 1);
-
                     self.clear_tile(j, i);
                     self.set_tile(j, i, above);
                 }
             }
         }
+        ClearedLine(row, ret)
+    }
+    
+    fn refill_rows(&mut self, rows: Vec<ClearedLine>) {
+        for line in rows {
+            let row = line.0;
+            if row < self.height {
+                for i in (row..23).rev() {
+                    for j in 0..10 {
+                        self.set_tile(j, i + 1, self.get_tile(j, i));
+                        self.clear_tile(j, i);
+                    }
+                }
+            }
+            for j in 0..10 {
+                self.set_tile(j, row, line.1[j as usize] as u8);
+            }
+        }
+    }
+    
+    fn place_clone(&self, piece: TetPiece) -> Self {
+        let mut clne = self.clone();
+        clne.place(piece);
+        return clne;
     }
 }
 #[wasm_bindgen]
@@ -504,7 +553,7 @@ impl TetBoard {
         return TetBoard::from_4h_array(arr.to_vec().as_slice().try_into().unwrap());
     }
     #[wasm_bindgen(js_name = doesCollide)]
-    pub fn js_does_collide(&self, piece: TetPiece) -> bool {
+    pub fn js_does_collide(&mut self, piece: TetPiece) -> bool {
         self.does_collide(piece)
     }
     #[wasm_bindgen(js_name = inBounds)]
@@ -512,15 +561,15 @@ impl TetBoard {
         return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24;
     }
     #[wasm_bindgen(js_name = rotatePiece)]
-    pub fn js_rotate_piece(&self, piece: &mut TetPiece, rotation: u8) -> bool {
+    pub fn js_rotate_piece(&mut self, piece: &mut TetPiece, rotation: u8) -> bool {
         self.rotate_piece(piece, rotation)
     }
     #[wasm_bindgen(js_name = "dasPiece")]
-    pub fn js_das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 {
+    pub fn js_das_piece(&mut self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 {
         self.das_piece(piece, direction, force)
     }
     #[wasm_bindgen(js_name = "canPlace")]
-    pub fn js_can_place(&self, piece: TetPiece) -> bool {
+    pub fn js_can_place(&mut self, piece: TetPiece) -> bool {
         self.can_place(piece)
     }
     #[wasm_bindgen(js_name = getTileArray)]
@@ -541,15 +590,15 @@ impl TetBoard {
         arr
     }
     #[wasm_bindgen(js_name = applyGravity)]
-    pub fn js_apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool {
+    pub fn js_apply_gravity(&mut self, piece: &mut TetPiece, force: i32) -> bool {
         self.apply_gravity(piece, force)
     }
     #[wasm_bindgen(js_name = moveLeft)]
-    pub fn js_move_left(&self, piece: &mut TetPiece, amount: i32) -> bool {
+    pub fn js_move_left(&mut self, piece: &mut TetPiece, amount: i32) -> bool {
         self.move_left(piece, amount)
     }
     #[wasm_bindgen(js_name = moveRight)]
-    pub fn js_move_right(&self, piece: &mut TetPiece, amount: i32) -> bool {
+    pub fn js_move_right(&mut self, piece: &mut TetPiece, amount: i32) -> bool {
         self.move_right(piece, amount)
     }
     #[wasm_bindgen(js_name = get_filled_rows)]

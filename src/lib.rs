@@ -28,12 +28,15 @@ pub mod tests {
     use crate::field;
     use crate::field::Field;
     use crate::fumen::TetFumen;
+    use crate::pc_utils::path;
     use crate::pc_utils::PiecePos;
+    use crate::pc_utils::PredData;
     use crate::piece;
     use crate::piece::get_pieces;
     use crate::piece::Direction;
     use crate::piece::PieceColor;
     use crate::piece::TetPiece;
+    use crate::queue;
     use crate::queue::Choose;
     use crate::queue::Queue;
     use crate::queue::QueueNode;
@@ -107,19 +110,19 @@ pub mod tests {
         //     println!("{} {}", i, q);
         //     i += 1;
         // }
-        let ilsz = Queue::from_string("*p2,*p7,*p1".to_string());
-        assert!(ilsz.is_ok());
+        let ilsz = Choose::from_string("*p7".to_string());
+        // assert!(ilsz.is_ok());
         let first_pc = ilsz.unwrap();
         // assert_eq!(first_pc.to_string(), "*p7,*p4".to_string());
         let mut i = 1;
-        let iter = first_pc.possible_q_iter();
-        println!("{}", iter.size());
+        let iter = first_pc.iter();
+        println!("{}", iter.len());
         for q in iter {
-            // println!("{} {}", i, q);
+            println!("{} {}", i, q);
             i += 1;
-            if (i % 10000 == 0) {
-                println!("{}", i);
-            }
+            // if (i % 10000 == 0) {
+            //     println!("{}", i);
+            // }
         }
         println!("{}", i);
 
@@ -165,7 +168,7 @@ pub mod tests {
         print!("{}", p);
     }
     fn collision_test() {
-        let board = board::TetBoard::new();
+        let mut board = board::TetBoard::new();
         let mut p =
             piece::TetPiece::new(piece::PieceColor::I, piece::Direction::North, Vec2(9, 20));
         assert_eq!(board.does_collide(p), true);
@@ -227,7 +230,9 @@ pub mod tests {
         let Z = piece::TetPiece::new(PieceColor::Z, Direction::North, Vec2(4, 20));
         println!("{}", Z);
     }
+    #[inline]
     fn pc_test() {
+        // print!("AAAAAA\n");
         // use crate::pc_utils::u64_field;
         // let mut board = u64_field::new();
         // board.set_tile(4, 2, 1);
@@ -237,50 +242,123 @@ pub mod tests {
         // t.position += Vec2(1,0);
         // assert_eq!(board.does_collide(t), false);
         // assert_eq!(board.can_place(t), true);
-        let mut init_fumen = TetFumen::new();
-        init_fumen.decode_fumen(String::from("v115@9gilFewhglAtGewhBtR4EewhAtR4FewhJeAgH"));
+        // let mut init_fumen = TetFumen::new();
+        // init_fumen.decode_fumen(String::from("v115@9gilwwCeRpwhglAtywBeRpwhBtR4CeRpwhAtR4DeRp?whJeAgH"));
+        let mut init_fumen = TetFumen::load(String::from("v115@9gC8FeC8GeE8EeD8FeA8JeAgH"));
+        // init_fumen = TetFumen::load(String::from("v115@9gC8wwBeAtRpC8ywBtRpE8i0RpD8BeAtg0RpA8JeAg?H"));
         let mut board = init_fumen.get_page_at(0).get_field().board.clone();
-        let mut piece = TetPiece::new(PieceColor::Z, Direction::North, Vec2(1, 8));
-        let pos_pred = |p: &TetPiece| p.get_minos().iter().all(|mino: &Vec2| mino.1 < 4);
-
-        let placements = board.get_piece_placements(piece);
-        println!("{:?}", placements);
-
+        // board = TetBoard::new();
+        // let mut piece = TetPiece::new(PieceColor::J, Direction::North, Vec2(0, 6));
+        let pos_pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
+        // let f1 = TetFumen::load_slice("v115@9gD8FeC8GeN8AeB8BeA8JeR9I").get_page_at(0).get_field().clone();
+        // let f2 = TetFumen::load_slice("v115@9gD8FeC8GeN8AeB8BeA8JeB9I").get_page_at(0).get_field().clone();
+        // println!("{} {}", f1, f2);
+        // println!("{:?} {:?}", f1.active_piece, f2.active_piece);
+        // {
+        //     let mut i = TetPiece::i();
+        //     i.position = Vec2(5,5);
+        //     let mut f = Field::default();
+        //     f.active_piece = Some(i);
+        //     println!("nya {}", f.encode_fum());
+        // }
+        // let mut a = Choose::from_string(String::from("*p7")).unwrap();
+        // let mut b = Choose::from_string(String::from("*p2")).unwrap();
         let mut file = OpenOptions::new().write(true).open("log.txt").unwrap();
         let mut buff = BufWriter::new(file);
         let mut fum = TetFumen::new();
+        let mut boards = Vec::new();
+        let mut queue = Queue::from_string(String::from("JTOTOZS")).unwrap();
+        let mut t = queue.pop_at(1);
+        println!("{:?}", t.unwrap().piece());
+        path(board, queue.clone(), 4, true, &mut boards);
+        let mut p = TetPiece::new(
+            queue.take_next_piece().unwrap(),
+            Direction::North,
+            Vec2(0, 4)
+        );
+        let placements = board.get_piece_placements(
+            p,
+            Some(&pos_pred)
+        );
 
-        for i in 0..placements.len() {
-            let placement = placements[i];
-            piece.set_piece_pos(placement);
-            board.place(piece);
-            // let mut new_piece = TetPiece::new(PieceColor::J, Direction::North, Vec2(0,6));
-            // let new_placements = board.get_piece_placements_pred(new_piece,
-            //     &pos_pred
-            // );
-            // for new_placement in new_placements {
-            //     new_piece.set_piece_pos(new_placement);
-
-            //     board.place(new_piece);
-            //     let mut new_piece1 = TetPiece::new(PieceColor::O, Direction::North, Vec2(0,6));
-            //     let new_placements1 = board.get_piece_placements_pred(new_piece1,
-            //         &pos_pred
-            //     );
-            //     for new_placement1 in new_placements1 {
-            //         new_piece1.set_piece_pos(new_placement1);
-
-            //         board.place(new_piece1);
-            //         board.unplace(new_piece1);
-
-            //     }
-            //     board.unplace(new_piece);
-
-            // }
-            fum.add_page_rs().set_field(Field::new(board, None, None));
-            board.unplace(piece);
+        // for place0 in placements {
+        //     piece.set_piece_pos(place0);
+        //     let mut board0 = board.place_clone(piece);
+        //     let mut piece0 = TetPiece::new(
+        //         PieceColor::Z, 
+        //         Direction::North, 
+        //         Vec2(0, 6)
+        //     );
+        //     let placements0 = board0.get_piece_placements(piece0, Some(&pos_pred));
+        //     for place1 in placements0 {
+        //         piece0.set_piece_pos(place1);
+        //         let board1 = board0.place_clone(piece0);
+        //         fum.add_page_rs().set_field(Field::new(
+        //             board1,
+        //             None,
+        //             None
+        //         ))
+        //     }
+        // }
+        for board in boards {
+            fum.add_page_rs().set_field(Field::from_board(board));
         }
+        // println!("{:?}", placements);
+        // for placement in placements {
+        //     p.set_piece_pos(placement);
+        //     // println!("{:?} {:?}", p.position, p.get_minos());
+        //     board.place(p);
+        //     println!("{}", board);
+        // }
         buff.write_all(fum.encode_fumen().as_bytes());
+        // for i in 0..placements.len() {
+        //     let placement = placements[i];
+        //     piece.set_piece_pos(placement);
+        //     board.place(piece);
+        //     let mut new_piece = TetPiece::new(PieceColor::Z, Direction::North, Vec2(0,6));
+        //     let new_placements = board.get_piece_placements(new_piece,
+        //         Some(&pos_pred)
+        //     );
+        //     buff.write_all(format!("aaaaaaaaa\n{}", board.no_color_string()).as_bytes());
+        //     for new_placement in new_placements {
+        //         new_piece.set_piece_pos(new_placement);
+        //         board.place(new_piece);
+        //         buff.write_all(format!("{}", board.no_color_string()).as_bytes());
+        //         fum.add_page_rs().set_field(Field::new(board, None, None));  
+        //         let mut new_piece1 = TetPiece::new(PieceColor::S, Direction::North, Vec2(0,6));
+        //         let new_placements1 = board.get_piece_placements_pred(new_piece1,
+        //             &pos_pred
+        //         );
+        //         for new_placement1 in new_placements1 {
+        //             new_piece1.set_piece_pos(new_placement1);
+        //             board.place(new_piece1);
+        //             let mut new_piece2 = TetPiece::new(PieceColor::O, Direction::North, Vec2(0,6));
+        //             let new_placements2 = board.get_piece_placements_pred(new_piece2,
+        //                 &pos_pred
+        //             );
+        //             for new_placement2 in new_placements2 {
+        //                 new_piece2.set_piece_pos(new_placement2);
+        //                 board.place(new_piece2);
+        //                 let mut new_piece3 = TetPiece::new(PieceColor::Z, Direction::North, Vec2(0,6));
+        //                 let new_placements3 = board.get_piece_placements_pred(new_piece3,
+        //                     &pos_pred
+        //                 );
+        //                 for new_placement3 in new_placements3 {
+        //                     new_piece3.set_piece_pos(new_placement3);
+        //                     board.place(new_piece3);
+        //                     board.unplace(new_piece3);
+        //                 }
+        //                 board.unplace(new_piece2);
+        //             }
+        //             board.unplace(new_piece1);
+        //         }
+        //         board.unplace(new_piece);
+        //     }
+        //     board.unplace(piece);
+        // }
+        // buff.write_all(fum.encode_fumen().as_bytes());
     }
+
     fn q_test() {
         use crate::queue::QueueNodeType::Piece;
         let mut a = Queue::new();
@@ -294,7 +372,8 @@ pub mod tests {
         a.append(b);
         println!("{}", a);
         assert_eq!(a.len(), 4);
-    }
+        
+    } 
     fn line_test() {
         let mut board = TetBoard::new();
         let rows = board.get_filled_rows();
@@ -368,6 +447,15 @@ pub mod tests {
         debug_log(Field::new(spin, Some(t), None).to_string().as_str());
         assert_eq!(spin.check_t_spin(t), TSpinResult::TSpin);
     }
+    fn cleared_test() {
+        let mut board = TetFumen::load(String::from("v115@9gD8FeC8GeN8AeB8BeA8JeAgH")).get_page_at(0).get_field().board.clone();
+        let mut t = TetPiece::t();
+        t.position = Vec2(4,1);
+        t.rotation = Direction::West;
+        println!("{}", t);
+        board.place(t);
+        println!("{}", board.quick_fumen_encode());
+    }
     #[test]
     fn test() {
         let mut input = String::new();
@@ -399,6 +487,8 @@ pub mod tests {
                     q_test();
                 } else if input == "line" {
                     line_test();
+                } else if input == "cleared" {
+                    cleared_test();
                 }
             }
             Err(error) => println!("error reading input: {error}"),

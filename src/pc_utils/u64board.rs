@@ -3,7 +3,7 @@ use std::{fs::create_dir, path::Display};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    board::{Board, ClearStruct, TetBoard},
+    board::{Board, ClearStruct, ClearedLine, TSpinResult, TetBoard},
     kicks::{get_180_kicks, get_kicks},
     piece::{piece_color_from_int, Direction, PieceColor, TetPiece},
     queue::{Queue, QueueNode},
@@ -108,7 +108,7 @@ impl Board for u64_board {
     fn in_bounds(&self, pos: Vec2) -> bool {
         return pos.0 > -1 && pos.0 < 10 && pos.1 > -1 && pos.1 < 24;
     }
-    fn rotate_piece(&self, piece: &mut TetPiece, rotation: u8) -> bool {
+    fn rotate_piece(&mut self, piece: &mut TetPiece, rotation: u8) -> bool {
         let mut test_piece = piece.clone();
         let mod_rot = rotation % 4;
         let old_rot: usize = piece.rotation as usize;
@@ -158,7 +158,7 @@ impl Board for u64_board {
         return false;
     }
 
-    fn das_piece(&self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 {
+    fn das_piece(&mut self, piece: &mut TetPiece, direction: Direction, force: i32) -> i8 {
         let mut ret = 0;
         let original = piece.position;
         match direction {
@@ -205,7 +205,7 @@ impl Board for u64_board {
         }
         ret
     }
-    fn apply_gravity(&self, piece: &mut TetPiece, force: i32) -> bool {
+    fn apply_gravity(&mut self, piece: &mut TetPiece, force: i32) -> bool {
         piece.position += Vec2(0, 1 * force);
         if self.does_collide(*piece) {
             piece.position -= Vec2(0, 1 * force);
@@ -229,7 +229,7 @@ impl Board for u64_board {
         }
     }
 
-    fn does_collide(&self, piece: TetPiece) -> bool {
+    fn does_collide(&mut self, piece: TetPiece) -> bool {
         let minos = piece.get_minos();
         if piece.position.1 > 6 {
             return true;
@@ -242,7 +242,7 @@ impl Board for u64_board {
         }
         return false;
     }
-    fn can_place(&self, piece: TetPiece) -> bool {
+    fn can_place(&mut self, piece: TetPiece) -> bool {
         if self.does_collide(piece) {
             false
         } else {
@@ -252,7 +252,7 @@ impl Board for u64_board {
         }
     }
 
-    fn move_left(&self, piece: &mut TetPiece, amount: i32) -> bool {
+    fn move_left(&mut self, piece: &mut TetPiece, amount: i32) -> bool {
         piece.position += Vec2(-1 * amount, 0);
         if self.does_collide(*piece) {
             piece.position -= Vec2(-1 * amount, 0);
@@ -262,7 +262,7 @@ impl Board for u64_board {
         }
     }
 
-    fn move_right(&self, piece: &mut TetPiece, amount: i32) -> bool {
+    fn move_right(&mut self, piece: &mut TetPiece, amount: i32) -> bool {
         piece.position += Vec2(amount, 0);
         if self.does_collide(*piece) {
             piece.position -= Vec2(amount, 0);
@@ -314,17 +314,100 @@ impl Board for u64_board {
         ret
     }
     
-    fn clear_row(&mut self, row: isize) {
-        todo!()
-    }
-    
     fn check_pc(&self) -> bool {
-        todo!()
+        self.0 == 0
+    }
+
+    fn check_t_spin(&self, piece: TetPiece) -> TSpinResult {
+        let mut res = TSpinResult::NoSpin;
+        if piece.color() == PieceColor::T {
+            let x = piece.position.0 as isize;
+
+            let y = piece.position.1 as isize;
+            let mut tl = self.get_tile(x - 1, y + 1);
+            let mut tr = self.get_tile(x + 1, y + 1);
+            let mut bl = self.get_tile(x - 1, y - 1);
+            let mut br = self.get_tile(x + 1, y - 1);
+            if tl > 0 {
+                tl = 1;
+            }
+            if tr > 0 {
+                tr = 1;
+            }
+            if bl > 0 {
+                bl = 1;
+            }
+            if br > 0 {
+                br = 1;
+            }
+            if tl + tr + bl + br >= 3 {
+                res = TSpinResult::MiniSpin;
+            }
+            match piece.rotation {
+                Direction::North => {
+                    if tl == 1 && tr == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                }
+                Direction::East => {
+                    if tr == 1 && br == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                }
+                Direction::South => {
+                    if bl == 1 && br == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                }
+                Direction::West => {
+                    if tl == 1 && bl == 1 {
+                        res = TSpinResult::TSpin;
+                    }
+                }
+            }
+        }
+        res
+    }
+
+    fn clear_row(&mut self, row: isize) -> ClearedLine {
+        let conv = row as usize;
+        let mut ret = Vec::with_capacity(10);
+        if row < 4 {
+            for i in row..4 {
+                for j in 0..10 {
+                    let above = self.get_tile(j, i + 1);
+                    ret.push(piece_color_from_int(self.get_tile(j, i)));
+                    self.clear_tile(j, i);
+                    self.set_tile(j, i, above);
+                }
+            }
+        }
+        ClearedLine(row, ret)
     }
     
-    fn check_t_spin(&self, piece: TetPiece) -> crate::board::TSpinResult {
-        todo!()
+    fn refill_rows(&mut self, rows: Vec<ClearedLine>) {
+        for line in rows {
+            let row = line.0;
+            if row < 4 {
+                for i in (row..4).rev() {
+                    for j in 0..10 {
+                        self.set_tile(j, i + 1, self.get_tile(j, i));
+                        self.clear_tile(j, i);
+                    }
+                }
+            }
+            for j in 0..10 {
+                self.set_tile(j, row, line.1[j as usize] as u8);
+            }
+        }
     }
+    
+    fn place_clone(&self, piece: TetPiece) -> Self {
+        let mut clne = Self(self.0);
+        clne.place(piece);
+        return clne;
+    }
+
 }
 impl std::fmt::Display for u64_board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

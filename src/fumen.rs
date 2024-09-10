@@ -4,8 +4,8 @@ use std::collections::LinkedList;
 use fumen::{CellColor, Piece, PieceType, RotationState};
 use wasm_bindgen::{convert::FromWasmAbi, prelude::wasm_bindgen};
 
-use crate::{board::{Board, TetBoard}, field::Field, piece::{Direction, PieceColor}, vec2::Vec2};
-#[derive(Clone)]
+use crate::{board::{Board, TetBoard}, field::Field, piece::{Direction, PieceColor, TetPiece}, vec2::Vec2};
+#[derive(Clone, Debug)]
 
 #[wasm_bindgen]
 pub struct TetPage {
@@ -90,6 +90,17 @@ fn piece_color_to_fumen_piece_type(c: PieceColor) -> PieceType {
         PieceColor::G => panic!("PieceColor::G cannot be converted to PieceType"),
     }
 }
+fn piece_color_from_fumen_piece_type(c: PieceType) -> PieceColor {
+    match c {
+        PieceType::I => PieceColor::I,
+        PieceType::L => PieceColor::L,
+        PieceType::O => PieceColor::O,
+        PieceType::Z => PieceColor::Z,
+        PieceType::T => PieceColor::T,
+        PieceType::J => PieceColor::J,
+        PieceType::S => PieceColor::S,
+    }
+}
 fn direction_to_rotation_state(dir: Direction) -> RotationState {
     match dir {
         Direction::East => RotationState::East,
@@ -133,15 +144,22 @@ impl TetPage  {
     //         comment: self.comment,
     //     }
     // }
+    pub fn create_blank_piece(&mut self) {
+        self.fumen_page.piece = Some(Piece { kind: 
+            PieceType::T,
+            rotation: RotationState::North,
+            x: 4, 
+            y: 10 
+        });
+    }
     #[wasm_bindgen(setter)]
     pub fn set_piece_color(&mut self, c: PieceColor) {
-        
         match self.fumen_page.piece {
-            Some(mut p) => 
+            Some(ref mut p) => 
             {
                 p.kind = piece_color_to_fumen_piece_type(c); 
                 match self.field.active_piece {
-                    Some(mut piece) => {
+                    Some(ref mut piece) => {
                         piece.set_color(c);
                     }
                     None => ()
@@ -154,10 +172,10 @@ impl TetPage  {
     #[wasm_bindgen(setter)]
     pub fn set_piece_rotation(&mut self, dir: Direction) {
         match self.fumen_page.piece {
-            Some(mut p) => {
+            Some(ref mut p) => {
                 p.rotation = direction_to_rotation_state(dir);
                 match self.field.active_piece {
-                    Some(mut piece) => {
+                    Some(ref mut piece) => {
                         piece.rotation = dir;
                     }
                     None => ()
@@ -169,11 +187,11 @@ impl TetPage  {
     #[wasm_bindgen(setter)]
     pub fn set_piece_position(&mut self, pos: Vec2) {
         match self.fumen_page.piece {
-            Some(mut p) => {
+            Some(ref mut p) => {
                 p.x = pos.0 as u32;
                 p.y = (23 - pos.1) as u32;
                 match self.field.active_piece {
-                    Some(mut piece) => {
+                    Some(ref mut piece) => {
                         piece.position = pos;
                     }
                     None => ()
@@ -185,8 +203,9 @@ impl TetPage  {
     }
 
     pub fn set_field(&mut self, field: Field) {
-        let mut inversed_field: Field = field;
 
+        let mut inversed_field: Field = field;
+        
         for y in 0..24 {
             for x in 0..10 {
                 // println!("{}", x);
@@ -206,7 +225,15 @@ impl TetPage  {
         // self.fumen_page.garbage_row = inversed_field.board.get_tile_matrix().map(
         //     |v| v.map(|c| u8_to_cell_color(c))
         // )[];
+        if field.active_piece.is_some() {
+            self.create_blank_piece();
+            let active = field.active_piece.unwrap();
+            self.set_piece_color(active.color());
+            self.set_piece_position(active.position);
+            self.set_piece_rotation(active.rotation);
+        }
     }
+    
     #[wasm_bindgen(setter)]
     pub fn set_comment(&mut self, comment: Option<String>) {
         self.comment = comment.clone();
@@ -234,6 +261,15 @@ impl TetPage  {
             comment: pg.get_comment().clone(),
             fumen_page: pg.clone(),
         };
+        if pg.piece.is_some() {
+            let pg_p = pg.piece.unwrap();
+            let mut p = TetPiece::new(
+                piece_color_from_fumen_piece_type(pg_p.kind),
+                rotation_state_to_direction(pg_p.rotation),
+                Vec2(pg_p.x.try_into().unwrap(), pg_p.y.try_into().unwrap())
+            );
+            new_pg.field.active_piece = Some(p);
+        }
         for y in 0..23 {
             for x in 0..10 {
                 if y == -2 {
@@ -274,12 +310,20 @@ impl fmt::Display for TetPage {
 #[wasm_bindgen]
 impl TetFumen { 
     #[wasm_bindgen(constructor)]
-    pub fn new() -> TetFumen {
+    pub fn new() -> Self {
         TetFumen {
             pages: Vec::new(),
             fumen: fumen::Fumen::new(),
             guideline: true
         }
+    }
+    pub fn load(code: String) -> Self {
+        let mut new_fum = Self::new();
+        new_fum.decode_fumen(code);
+        return new_fum;
+    }
+    pub fn load_slice(code: &str) -> Self {
+        Self::load(String::from(code))
     }
     #[wasm_bindgen(js_name = "addPage")]
     pub fn add_page(&mut self) -> *mut TetPage {
@@ -304,9 +348,19 @@ impl TetFumen {
     fn encode(&self) -> String {
         self.fumen.encode()
     }
+
     #[wasm_bindgen(js_name = "decodeFumen")]
     pub fn decode_fumen(&mut self, fumen: String) {
-        let new_page = fumen::Fumen::decode(fumen.as_str()).unwrap();
+        println!("{}", fumen);
+        let mut new_pagee = fumen::Fumen::decode(fumen.as_str());
+        if new_pagee.is_err() {
+            let err = new_pagee.clone().err().unwrap();
+            println!("ee {:?}", err);
+            return
+        }
+        let new_page = new_pagee.unwrap();
+        
+        // println!("AAAe {:?}", new_page.get_pages()[0].piece.unwrap());
         self.fumen = new_page.clone();
         self.pages = Vec::new();
         for page in new_page.get_pages() { 
@@ -332,5 +386,21 @@ impl TetFumen {
     }
     pub fn get_page_at_mut(&mut self, idx: usize) -> &mut TetPage {
         &mut self.pages[idx]
+    }
+}
+impl TetBoard {
+    pub fn quick_fumen_encode(&self) -> String {
+        let mut fum = TetFumen::new();
+        let page = fum.add_page_rs();
+        page.set_field(Field::new(self.clone(), None, None));
+        fum.encode_fumen()
+    }
+}
+impl Field {
+    pub fn encode_fum(&self) -> String {
+        let mut fum = TetFumen::new();
+        let pg = fum.add_page_rs();
+        pg.set_field(self.clone());
+        fum.encode_fumen()
     }
 }

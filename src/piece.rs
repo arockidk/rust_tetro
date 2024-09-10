@@ -256,7 +256,7 @@ pub struct TetPiece {
 }
 impl fmt::Display for TetPiece { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let minos = self.get_minos();
+        let minos = self.get_raw_minos();
         let mut str_matrix: [[&str; 4]; 4] = [
             [".", ".", ".", "."],
             [".", ".", ".", "."],
@@ -269,10 +269,10 @@ impl fmt::Display for TetPiece {
         );
         for mino in minos {
             let pos = Vec2(
-                (mino.0 - self.position.0 + 1),
-                (mino.1 - self.position.1 + 2)
+                mino.0,
+                mino.1
             );
-
+            
             str_matrix[pos.1 as usize][pos.0 as usize] = coloured.as_str();
 
             // println!("{} {} {} {}", mino.0, self.position.0, mino.1, self.position.1);
