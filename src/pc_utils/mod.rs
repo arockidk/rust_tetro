@@ -498,27 +498,59 @@ impl TetBoard {
     }
 }
 pub fn path(mut board: TetBoard, mut queue: Queue, height: u8, can_hold: bool, end_boards: &mut Vec<TetBoard>) {
-    let mut piece = TetPiece::new(
-        queue.take_next_piece().unwrap(), 
-        Direction::North, 
-        Vec2(0, (height + 2).into())
-    );
-    let pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
-    let placements = board.get_piece_placements(piece, Some(&pred));
-    
-    if (queue.len() > 0) {
-        for placement in placements {
-            piece.set_piece_pos(placement);
-            let new_board = board.place_clone(piece);
+    if can_hold && queue.len() > 1 {
+        let mut q1 = queue.clone();
+        let mut q2 = queue.clone();
+        let mut p1 = TetPiece::new(
+            q1.take_next_piece().unwrap(), 
+            Direction::North, 
+            Vec2(0, (height + 2).into())
+        );
+        let mut p2 = TetPiece::new(
+            q2.take_next_piece().unwrap(), 
+            Direction::North, 
+            Vec2(0, (height + 2).into())
+        );
+        let pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
+        let placements1 = board.get_piece_placements(p1, Some(&pred));
+        let placements2 = board.get_piece_placements(p2, Some(&pred));
+        for placement in placements1 {
+            p1.set_piece_pos(placement);
+            let new_board = board.place_clone(p1);
+
+            path(new_board, q1, height, can_hold, end_boards);
+        }
         
-            path(new_board, queue.clone(), height, can_hold, end_boards)
+        for placement in placements2 {
+            p2.set_piece_pos(placement);
+            let new_board = board.place_clone(p2);
+
+            path(new_board, q2.clone(), height, can_hold, end_boards);
         }
     } else {
-        for placement in placements {
-            piece.set_piece_pos(placement);
-            end_boards.push(board.place_clone(piece));
+        let mut piece = TetPiece::new(
+            queue.take_next_piece().unwrap(), 
+            Direction::North, 
+            Vec2(0, (height + 2).into())
+        );
+        let pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
+        let placements = board.get_piece_placements(piece, Some(&pred));
+
+        if (queue.len() > 0) {
+            for placement in placements {
+                piece.set_piece_pos(placement);
+                let new_board = board.place_clone(piece);
+
+                path(new_board, queue.clone(), height, can_hold, end_boards);
+            }
+        } else {
+            for placement in placements {
+                piece.set_piece_pos(placement);
+                end_boards.push(board.place_clone(piece));
+            }
         }
     }
+    
 
 }
 use crate::queue::Queue;
