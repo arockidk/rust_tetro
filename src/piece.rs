@@ -429,7 +429,15 @@ impl TetPiece {
         return minos;
     }
 }
-
+impl From<(PieceColor, Vec2)> for TetPiece {
+    fn from(value: (PieceColor, Vec2)) -> Self {
+        TetPiece::new(
+            value.0,
+            Direction::North, 
+            value.1
+        )
+    }
+} 
 pub fn get_pieces() -> [PieceColor; 7] {
     return [PieceColor::T, PieceColor::I, PieceColor::L, PieceColor::J, PieceColor::Z, PieceColor::S, PieceColor::O];
 }

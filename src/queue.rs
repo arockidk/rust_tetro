@@ -65,6 +65,22 @@ impl QueueNode {
             next
         }
     }
+    pub fn cchoose(choose: Choose) -> Self {
+        Self::new(
+            QueueNodeType::Choose, 
+            Some(choose), 
+            None, 
+            None
+        )
+    }
+    pub fn cpiece(piece: PieceColor) -> Self {
+        Self::new(
+            QueueNodeType::Piece, 
+            None, 
+            Some(piece), 
+            None
+        )
+    }
     pub fn choose(&self) -> Choose {
         self.choose.clone().unwrap()
     }

@@ -18,6 +18,7 @@ pub mod tests {
     use std::io;
     use std::io::BufWriter;
     use std::io::Write;
+    use std::usize;
 
     use fumen::RotationState;
 
@@ -29,6 +30,8 @@ pub mod tests {
     use crate::field::Field;
     use crate::fumen::TetFumen;
     use crate::pc_utils::path;
+    use crate::pc_utils::path_entry;
+    use crate::pc_utils::PathOptions;
     use crate::pc_utils::PiecePos;
     use crate::pc_utils::PredData;
     use crate::piece;
@@ -246,10 +249,16 @@ pub mod tests {
         // init_fumen.decode_fumen(String::from("v115@9gilwwCeRpwhglAtywBeRpwhBtR4CeRpwhAtR4DeRp?whJeAgH"));
         let mut init_fumen = TetFumen::load(String::from("v115@9gC8FeC8GeE8EeD8FeA8JeAgH"));
         // init_fumen = TetFumen::load(String::from("v115@9gC8wwBeAtRpC8ywBtRpE8i0RpD8BeAtg0RpA8JeAg?H"));
+        // init_fumen = TetFumen::load_slice("v115@9gC8CeF8CeR8BeE8JeAgH");
+        // init_fumen = TetFumen::load_slice("v115@9gC8ywF8BewwR8BeE8JeAgH");
+        init_fumen = TetFumen::load_slice("v115@9gC8FeC8GeN8AeB8BeB8JeAgH"); // Jigsaw
         let mut board = init_fumen.get_page_at(0).get_field().board.clone();
         // board = TetBoard::new();
         // let mut piece = TetPiece::new(PieceColor::J, Direction::North, Vec2(0, 6));
-        let pos_pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
+        let pos_pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| {
+            // println!("{:?}",mino);
+            mino.1 < (4 - data.lines_cleared).into()
+        });
         // let f1 = TetFumen::load_slice("v115@9gD8FeC8GeN8AeB8BeA8JeR9I").get_page_at(0).get_field().clone();
         // let f2 = TetFumen::load_slice("v115@9gD8FeC8GeN8AeB8BeA8JeB9I").get_page_at(0).get_field().clone();
         // println!("{} {}", f1, f2);
@@ -267,19 +276,36 @@ pub mod tests {
         let mut buff = BufWriter::new(file);
         let mut fum = TetFumen::new();
         let mut boards = Vec::new();
-        let mut queue = Queue::from_string(String::from("JTOTOZS")).unwrap();
-        let mut t = queue.pop_at(1);
-        println!("{:?}", t.unwrap().piece());
-        path(board, queue.clone(), 4, true, &mut boards);
-        let mut p = TetPiece::new(
-            queue.take_next_piece().unwrap(),
-            Direction::North,
-            Vec2(0, 4)
-        );
-        let placements = board.get_piece_placements(
-            p,
-            Some(&pos_pred)
-        );
+        let mut queue = Queue::from_string(String::from("TJSI")).unwrap();
+        // queue = Queue::from_string(String::from("Z")).unwrap();
+        let options = PathOptions {
+            board,
+            queue: queue.clone(),
+            height: 4,
+            hold: true,
+            max_boards: usize::MAX,
+        };
+        path_entry(options, &mut boards);
+        // let mut t = queue.pop_at(1);
+        // println!("{:?}", t.unwrap().piece());
+
+        // let mut p = TetPiece::new(
+        //     queue.take_next_piece().unwrap(),
+        //     Direction::North,
+        //     Vec2(4, 2)
+        // );
+        // let placements = board.get_piece_placements(
+        //     p,
+        //     Some(&pos_pred)
+        // );
+        // for placement in placements {
+        //     p.set_piece_pos(placement);
+        //     fum.add_page_rs().set_field(Field::from_board(board.place_clone(p)));
+
+        // }
+        for board in boards {
+            fum.add_page_rs().set_field(Field::from_board(board));
+        }
 
         // for place0 in placements {
         //     piece.set_piece_pos(place0);
@@ -300,9 +326,7 @@ pub mod tests {
         //         ))
         //     }
         // }
-        for board in boards {
-            fum.add_page_rs().set_field(Field::from_board(board));
-        }
+      
         // println!("{:?}", placements);
         // for placement in placements {
         //     p.set_piece_pos(placement);

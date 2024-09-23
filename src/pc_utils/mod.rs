@@ -1,16 +1,17 @@
 mod u64board;
+mod placement_tree;
 use core::fmt;
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-
+use placement_tree::PlacementTree;
 use crate::board::{Board, TetBoard};
 use crate::field::Field;
 use crate::gameplay::Action;
 use crate::vec2::Vec2;
-use crate::{piece, queue};
-use crate::piece::{Direction, PieceColor, TetPiece};
+use crate::{math, piece, queue};
+use crate::piece::{piece_color_to_char, Direction, PieceColor, TetPiece};
 impl Queue {
     /**
      * Get columnar parity without T pieces.
@@ -121,6 +122,7 @@ pub struct PieceNode {
     actions: HashMap<u8, Box<PieceNode>>
 
 }
+
 impl u64_board {
     pub fn get_piece_placements(&mut self, mut piece: TetPiece, height: u8) -> Vec<PiecePos> {
         let mut placements = Vec::new();
@@ -151,6 +153,8 @@ impl TetBoard {
             if seen[pos.0 as usize] {
                 return
             }
+            seen[pos.0 as usize] = true;
+            todo.push(pos);
             match piece.color() {
                 PieceColor::Z | PieceColor::S => {
                     // println!("{:?} {} {} {} {}", piece, pos.0 & !0b11, pos.0 & 0b11, ((pos.0 + 2) % 4), ((pos.0 & !0b11) + ((pos.0 + 2) % 4)));
@@ -232,8 +236,7 @@ impl TetBoard {
                 },
                 _ => ()
             }
-            seen[pos.0 as usize] = true;
-            todo.push(pos);
+
             if self.can_place(*piece) { 
                 placements.push(pos);
             }
@@ -245,6 +248,8 @@ impl TetBoard {
             if seen[pos.0 as usize] {
                 return
             }
+            seen[pos.0 as usize] = true;
+            todo.push(pos);
             let mut out_of_bounds = false;
             match piece.color() {
                 PieceColor::Z | PieceColor::S => {
@@ -346,8 +351,8 @@ impl TetBoard {
                 },
                 _ => ()
             }
-            seen[pos.0 as usize] = true;
-            todo.push(pos);
+            // println!("{:?}", piece);
+
             data.piece = Some(*piece);
             if self.can_place(*piece) && pred(*data) { 
                 placements.push(pos);
@@ -360,12 +365,19 @@ impl TetBoard {
             lines_cleared: 0,
             piece: None
         };
+//         println!(
+// "==================================
+// Starting search of piece, {}
+// ==================================",
+//             piece_color_to_char(piece.color())
+//         );
         let mut ret;
         let mut cleared = Vec::new();
         for row in self.get_filled_rows() {
             cleared.push(self.clear_row(row));
             pred_data.lines_cleared += 1;
         }
+        // println!("{}", self);
         if pred.is_none() {
             ret = self.get_piece_placements0(piece);
         } else {
@@ -463,14 +475,22 @@ impl TetBoard {
         self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, data, pred);
         piece.set_piece_pos(start_pos);
         self.rotate_piece(&mut piece, 3);
+        // println!("{:?}", piece);
         self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, data, pred);
 
         let mut i = 0;
+        // print!("{:?}", todo.iter().map(|pos: &PiecePos| {
+        //     (pos.get_pos(), pos.get_rot())
+        // }));
         while todo.len() > 0 {
             if let Some(mut start_pos) = todo.pop() {
                 i += 1;
 
                 piece.set_piece_pos(start_pos);
+                // println!("====================Searching====================\n{}", Field::new(self.clone(), Some(piece), None));
+                if start_pos.get_pos() == Vec2(4,2) {
+                    // println!("AAAAAAAAAAAAAAAAAAA{}", Field::new(self.clone(), Some(piece), None));
+                }
     //         println!("{} {}aaaaaa", Field::new(self.clone(), Some(piece), None), start_pos);
                 piece.move_left(1);
                 self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, data, pred);
@@ -488,6 +508,7 @@ impl TetBoard {
                 self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, data, pred);
                 piece.set_piece_pos(start_pos);
                 self.rotate_piece(&mut piece, 3);
+                
                 self.check_piece_placement_pred(&piece, &mut seen, &mut todo, &mut placements, data, pred);
 
             }
@@ -495,54 +516,125 @@ impl TetBoard {
         }
 
         placements 
+    }   
+    fn filled_mino_count(&self, height: usize) -> usize {
+        let mut count = 0;
+        for i in 0..height {
+            for j in 0..self.width {
+                if self.get_tile(j, i as isize) != 0 {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+    fn get_max_pieces(&self, height: usize) -> usize {
+        let filled = self.filled_mino_count(height) as usize;
+        let unfilled = height * self.width as usize - filled;
+        unfilled / 4
     }
 }
-pub fn path(mut board: TetBoard, mut queue: Queue, height: u8, can_hold: bool, end_boards: &mut Vec<TetBoard>) {
-    if can_hold && queue.len() > 1 {
-        let mut q1 = queue.clone();
-        let mut q2 = queue.clone();
-        let mut p1 = TetPiece::new(
-            q1.take_next_piece().unwrap(), 
-            Direction::North, 
-            Vec2(0, (height + 2).into())
-        );
-        let mut p2 = TetPiece::new(
-            q2.take_next_piece().unwrap(), 
-            Direction::North, 
-            Vec2(0, (height + 2).into())
-        );
-        let pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
-        let placements1 = board.get_piece_placements(p1, Some(&pred));
-        let placements2 = board.get_piece_placements(p2, Some(&pred));
-        for placement in placements1 {
-            p1.set_piece_pos(placement);
-            let new_board = board.place_clone(p1);
-
-            path(new_board, q1, height, can_hold, end_boards);
+pub struct PathOptions {
+    pub board: TetBoard,
+    pub queue: Queue,
+    pub height: usize,
+    pub hold: bool,
+    pub max_boards: usize
+}
+pub fn path_entry(
+    options: PathOptions,
+    output: &mut Vec<TetBoard>
+) -> i8 {
+    let PathOptions {
+        board, 
+        queue, 
+        height, 
+        hold,
+        max_boards
+    } = options;
+    
+    let pieces_remaining = board.get_max_pieces(height);
+    let queue_length = queue.len();
+    let mut max_depth = pieces_remaining;
+    if queue_length < pieces_remaining {
+        max_depth = queue_length;
+    }
+    path(board, queue, height, hold, output, max_boards, 0, max_depth, Vec::new());
+    return 0;
+}
+pub fn path(
+    mut board: TetBoard,
+    mut queue: Queue, 
+    height: usize, 
+    hold: bool, 
+    end_boards: &mut Vec<TetBoard>,
+    max_boards: usize,
+    depth: usize,
+    max_depth: usize,
+    mut used: Vec<PieceColor>
+) {
+    println!("Cur queue: {}, used: {:?}", queue, used);
+    let pieces_remaining = board.get_max_pieces(height);
+    let last = depth == max_depth - 1;
+    let pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
+    
+    let pos = Vec2(0, (height + 2) as i32);
+    let mut next = queue.take_next_piece().unwrap();
+    let mut piece = TetPiece::from((next, pos));
+    used.push(next);
+    
+    let mut placements = board.get_piece_placements(piece, Some(&pred));
+    // println!("{:?} {:?}", piece, placements);
+    if (!last) {
+        
+        for placement in placements {
+            piece.set_piece_pos(placement);
+            let new_board = board.place_clone(piece);
+            path(
+                new_board, 
+                queue.clone(), 
+                height, 
+                hold, 
+                end_boards,
+                max_boards,
+                depth + 1,
+                max_depth,
+                used.clone()
+            );
         }
         
-        for placement in placements2 {
-            p2.set_piece_pos(placement);
-            let new_board = board.place_clone(p2);
-
-            path(new_board, q2.clone(), height, can_hold, end_boards);
-        }
     } else {
-        let mut piece = TetPiece::new(
-            queue.take_next_piece().unwrap(), 
-            Direction::North, 
-            Vec2(0, (height + 2).into())
-        );
-        let pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
-        let placements = board.get_piece_placements(piece, Some(&pred));
+        for placement in placements {
+            piece.set_piece_pos(placement);
+            end_boards.push(board.place_clone(piece));
+        }
+    }
+    queue.push_front(QueueNode::cpiece(next));
+    used.pop();
+    if hold && queue.len() > 1 {
+        next = queue.pop_at(1).unwrap().piece();
+        piece = TetPiece::from((next, pos));
+        used.push(next);
 
-        if (queue.len() > 0) {
+        let mut placements = board.get_piece_placements(piece, Some(&pred));
+        // println!("{:?} {:?}", piece, placements);
+        if (!last) {
             for placement in placements {
                 piece.set_piece_pos(placement);
                 let new_board = board.place_clone(piece);
-
-                path(new_board, queue.clone(), height, can_hold, end_boards);
+                path(
+                    new_board, 
+                    queue.clone(), 
+                    height, 
+                    hold, 
+                    end_boards,
+                    max_boards,
+                    depth + 1,
+                    max_depth,
+                    used.clone()
+                );
             }
+            
         } else {
             for placement in placements {
                 piece.set_piece_pos(placement);
@@ -550,8 +642,6 @@ pub fn path(mut board: TetBoard, mut queue: Queue, height: u8, can_hold: bool, e
             }
         }
     }
-    
-
 }
-use crate::queue::Queue;
+use crate::queue::{Queue, QueueNode};
 
