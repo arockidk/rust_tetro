@@ -279,8 +279,8 @@ pub mod tests {
         let mut queue = Queue::from_string(String::from("TJSI")).unwrap();
         // queue = Queue::from_string(String::from("Z")).unwrap();
         let options = PathOptions {
-            board,
-            queue: queue.clone(),
+            tetfu: String::from("v115@9gC8FeC8GeN8AeB8BeB8JeAgH"),
+            patterns: String::from("*p7 ; *p4"),
             height: 4,
             hold: true,
             max_boards: usize::MAX,

@@ -422,6 +422,23 @@ impl Queue {
 
 }
 impl Queue {
+    pub fn choose_count(&self) -> usize {
+        let head = &self.head();
+        let mut count = 0;
+        if head.next.is_some() {
+            let mut cur = head;
+            for _ in 0..self.len() {
+                if cur.node_type == QueueNodeType::Choose {
+                    count += 1;
+                }
+                if let Some(next) = &cur.next {
+                    cur = next.as_ref();
+                }
+            }
+
+        }
+        count
+    }
     pub fn pop_at(&mut self, idx: usize) -> Option<QueueNode> { 
         self.head().pop_at(idx)
     }

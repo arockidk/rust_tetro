@@ -325,6 +325,9 @@ impl TetFumen {
     pub fn load_slice(code: &str) -> Self {
         Self::load(String::from(code))
     }
+    pub fn len(&self) -> usize {
+        self.pages.len()
+    }
     #[wasm_bindgen(js_name = "addPage")]
     pub fn add_page(&mut self) -> *mut TetPage {
         let mut page = TetPage::default();

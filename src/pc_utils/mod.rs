@@ -8,6 +8,7 @@ use std::hash::Hash;
 use placement_tree::PlacementTree;
 use crate::board::{Board, TetBoard};
 use crate::field::Field;
+use crate::fumen::TetFumen;
 use crate::gameplay::Action;
 use crate::vec2::Vec2;
 use crate::{math, piece, queue};
@@ -535,8 +536,8 @@ impl TetBoard {
     }
 }
 pub struct PathOptions {
-    pub board: TetBoard,
-    pub queue: Queue,
+    pub tetfu: String,
+    pub patterns: String,
     pub height: usize,
     pub hold: bool,
     pub max_boards: usize
@@ -546,20 +547,38 @@ pub fn path_entry(
     output: &mut Vec<TetBoard>
 ) -> i8 {
     let PathOptions {
-        board, 
-        queue, 
+        tetfu, 
+        patterns, 
         height, 
         hold,
         max_boards
     } = options;
-    
-    let pieces_remaining = board.get_max_pieces(height);
-    let queue_length = queue.len();
-    let mut max_depth = pieces_remaining;
-    if queue_length < pieces_remaining {
-        max_depth = queue_length;
+    let mut fum = TetFumen::load(tetfu);
+    let pattern_str_vec = patterns.split(';')
+        .collect::<Vec<_>>();
+    let raw_queue_vec = pattern_str_vec.iter()
+        .map(|s| String::from(*s))
+        .map(|mut s| s.chars().filter(|c| !c.is_whitespace()).collect())
+        .map(|s| Queue::from_string(s))
+        .map(|q| q.unwrap())
+        .collect::<Vec<_>>();
+
+    for i in 0..fum.len() {
+        let page = fum.get_page_at(i);
+        let board = page.get_field().board.clone();
+        let pieces_remaining = board.get_max_pieces(height);
+        
+        for queue in &raw_queue_vec {
+            let queue_length = queue.len();
+            let mut max_depth = pieces_remaining;
+            if queue_length < pieces_remaining {
+                max_depth = queue_length;
+            }
+            path(board, queue.clone(), height, hold, output, max_boards, 0, max_depth, Vec::new());
+        }
+
     }
-    path(board, queue, height, hold, output, max_boards, 0, max_depth, Vec::new());
+
     return 0;
 }
 pub fn path(
