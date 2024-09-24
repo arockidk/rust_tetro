@@ -144,6 +144,7 @@ impl TetPage  {
     //         comment: self.comment,
     //     }
     // }
+    #[wasm_bindgen(js_name = "createBlankPiece")]
     pub fn create_blank_piece(&mut self) {
         self.fumen_page.piece = Some(Piece { kind: 
             PieceType::T,
@@ -201,7 +202,7 @@ impl TetPage  {
             
         }
     }
-
+    #[wasm_bindgen(setter)]
     pub fn set_field(&mut self, field: Field) {
 
         let mut inversed_field: Field = field;
@@ -252,6 +253,7 @@ impl TetPage  {
     pub fn comment(&mut self) -> Option<String> {
         self.comment.clone()
     }
+    #[wasm_bindgen(js_name = "fromFumenPage")]
     pub fn from_fumen_page(pg: fumen::Page) -> TetPage {
         let mut new_pg = TetPage { 
             field: Field::new(TetBoard::new(), None, None),
@@ -322,6 +324,7 @@ impl TetFumen {
         new_fum.decode_fumen(code);
         return new_fum;
     }
+    #[wasm_bindgen(js_name = "loadSlice")]
     pub fn load_slice(code: &str) -> Self {
         Self::load(String::from(code))
     }
