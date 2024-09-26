@@ -375,8 +375,8 @@ impl TetFumen {
         
     }
     #[wasm_bindgen(js_name = "getPageAt")]
-    pub fn js_get_page_at(&self, idx: usize) -> *const TetPage {
-        &self.pages[idx]
+    pub fn js_get_page_at(&self, idx: usize) -> TetPage {
+        self.pages[idx].clone()
     }
 
 }
