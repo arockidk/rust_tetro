@@ -242,15 +242,15 @@ impl TetPage  {
         
     }
     #[wasm_bindgen(getter)]
-    pub fn field(&mut self) -> *mut Field {
-        &mut self.field
+    pub fn field(&self) -> Field {
+        self.field.clone()
     }
     #[wasm_bindgen(getter)]
-    pub fn fumen_page(&mut self) -> *mut fumen::Page {
-        &mut self.fumen_page
+    pub fn fumen_page(&self) -> fumen::Page {
+        self.fumen_page.clone()
     }
     #[wasm_bindgen(getter)]
-    pub fn comment(&mut self) -> Option<String> {
+    pub fn comment(self) -> Option<String> {
         self.comment.clone()
     }
     #[wasm_bindgen(js_name = "fromFumenPage")]
