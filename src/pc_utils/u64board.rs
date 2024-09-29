@@ -407,6 +407,10 @@ impl Board for u64_board {
         clne.place(piece);
         return clne;
     }
+    
+    fn to_gray(&mut self) {
+
+    }
 
 }
 impl std::fmt::Display for u64_board {

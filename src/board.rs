@@ -68,6 +68,7 @@ pub trait Board {
     fn check_t_spin(&self, piece: TetPiece) -> TSpinResult;
     fn refill_rows(&mut self, rows: Vec<ClearedLine>);
     fn place_clone(&self, piece: TetPiece) -> Self;
+    fn to_gray(&mut self);
 }
 
 #[wasm_bindgen]
@@ -501,6 +502,14 @@ impl Board for TetBoard {
         let mut clne = self.clone();
         clne.place(piece);
         return clne;
+    }
+    
+    fn to_gray(&mut self) {
+        for ref mut tile in self.tiles {
+            if *tile != 0 {
+                *tile = 8;
+            }
+        }
     }
 }
 #[wasm_bindgen]
