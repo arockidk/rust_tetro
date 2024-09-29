@@ -235,43 +235,15 @@ pub mod tests {
     }
     #[inline]
     fn pc_test() {
-        // print!("AAAAAA\n");
-        // use crate::pc_utils::u64_field;
-        // let mut board = u64_field::new();
-        // board.set_tile(4, 2, 1);
-        // println!("{}", board);
-        // let mut t = piece::TetPiece::new(PieceColor::T, Direction::North, Vec2(0,0));
-        // assert_eq!(board.does_collide(t), true);
-        // t.position += Vec2(1,0);
-        // assert_eq!(board.does_collide(t), false);
-        // assert_eq!(board.can_place(t), true);
-        // let mut init_fumen = TetFumen::new();
-        // init_fumen.decode_fumen(String::from("v115@9gilwwCeRpwhglAtywBeRpwhBtR4CeRpwhAtR4DeRp?whJeAgH"));
         let mut init_fumen = TetFumen::load(String::from("v115@9gC8FeC8GeE8EeD8FeA8JeAgH"));
         // init_fumen = TetFumen::load(String::from("v115@9gC8wwBeAtRpC8ywBtRpE8i0RpD8BeAtg0RpA8JeAg?H"));
         // init_fumen = TetFumen::load_slice("v115@9gC8CeF8CeR8BeE8JeAgH");
         // init_fumen = TetFumen::load_slice("v115@9gC8ywF8BewwR8BeE8JeAgH");
         init_fumen = TetFumen::load_slice("v115@9gC8FeC8GeN8AeB8BeB8JeAgH"); // Jigsaw
         let mut board = init_fumen.get_page_at(0).get_field().board.clone();
-        // board = TetBoard::new();
-        // let mut piece = TetPiece::new(PieceColor::J, Direction::North, Vec2(0, 6));
         let pos_pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| {
-            // println!("{:?}",mino);
             mino.1 < (4 - data.lines_cleared).into()
         });
-        // let f1 = TetFumen::load_slice("v115@9gD8FeC8GeN8AeB8BeA8JeR9I").get_page_at(0).get_field().clone();
-        // let f2 = TetFumen::load_slice("v115@9gD8FeC8GeN8AeB8BeA8JeB9I").get_page_at(0).get_field().clone();
-        // println!("{} {}", f1, f2);
-        // println!("{:?} {:?}", f1.active_piece, f2.active_piece);
-        // {
-        //     let mut i = TetPiece::i();
-        //     i.position = Vec2(5,5);
-        //     let mut f = Field::default();
-        //     f.active_piece = Some(i);
-        //     println!("nya {}", f.encode_fum());
-        // }
-        // let mut a = Choose::from_string(String::from("*p7")).unwrap();
-        // let mut b = Choose::from_string(String::from("*p2")).unwrap();
         let mut file = OpenOptions::new().write(true).open("log.txt").unwrap();
         let mut buff = BufWriter::new(file);
         let mut fum = TetFumen::new();
@@ -280,62 +252,16 @@ pub mod tests {
         // queue = Queue::from_string(String::from("Z")).unwrap();
         let options = PathOptions {
             tetfu: String::from("v115@9gC8FeC8GeN8AeB8BeB8JeAgH"),
-            patterns: String::from("*p7 ; *p4"),
+            patterns: String::from("TJSI"),
             height: 4,
             hold: true,
             max_boards: usize::MAX,
         };
         path_entry(options, &mut boards);
-        // let mut t = queue.pop_at(1);
-        // println!("{:?}", t.unwrap().piece());
-
-        // let mut p = TetPiece::new(
-        //     queue.take_next_piece().unwrap(),
-        //     Direction::North,
-        //     Vec2(4, 2)
-        // );
-        // let placements = board.get_piece_placements(
-        //     p,
-        //     Some(&pos_pred)
-        // );
-        // for placement in placements {
-        //     p.set_piece_pos(placement);
-        //     fum.add_page_rs().set_field(Field::from_board(board.place_clone(p)));
-
-        // }
         for board in boards {
             fum.add_page_rs().set_field(Field::from_board(board));
         }
-
-        // for place0 in placements {
-        //     piece.set_piece_pos(place0);
-        //     let mut board0 = board.place_clone(piece);
-        //     let mut piece0 = TetPiece::new(
-        //         PieceColor::Z, 
-        //         Direction::North, 
-        //         Vec2(0, 6)
-        //     );
-        //     let placements0 = board0.get_piece_placements(piece0, Some(&pos_pred));
-        //     for place1 in placements0 {
-        //         piece0.set_piece_pos(place1);
-        //         let board1 = board0.place_clone(piece0);
-        //         fum.add_page_rs().set_field(Field::new(
-        //             board1,
-        //             None,
-        //             None
-        //         ))
-        //     }
-        // }
-      
-        // println!("{:?}", placements);
-        // for placement in placements {
-        //     p.set_piece_pos(placement);
-        //     // println!("{:?} {:?}", p.position, p.get_minos());
-        //     board.place(p);
-        //     println!("{}", board);
-        // }
         buff.write_all(fum.encode_fumen().as_bytes());
-        // for i in 0..placements.len() {
         //     let placement = placements[i];
         //     piece.set_piece_pos(placement);
         //     board.place(piece);
