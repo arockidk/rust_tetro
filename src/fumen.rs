@@ -361,7 +361,7 @@ impl TetFumen {
         let mut new_pagee = fumen::Fumen::decode(fumen.as_str());
         if new_pagee.is_err() {
             let err = new_pagee.clone().err().unwrap();
-            println!("ee {:?}", err);
+            eprintln!("{:?}", err);
             return
         }
         let new_page = new_pagee.unwrap();
