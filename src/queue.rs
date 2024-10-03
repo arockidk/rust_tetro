@@ -422,6 +422,13 @@ impl Queue {
 
 }
 impl Queue {
+    pub fn head_mut(&mut self) -> &mut QueueNode {
+        if self.head.is_some() {
+            self.head.as_mut().unwrap()
+        } else {
+            panic!("Head node doesn't exist")
+        }
+    }
     pub fn choose_count(&self) -> usize {
         let head = &self.head();
         let mut count = 0;
@@ -440,7 +447,7 @@ impl Queue {
         count
     }
     pub fn pop_at(&mut self, idx: usize) -> Option<QueueNode> { 
-        self.head().pop_at(idx)
+        self.head_mut().pop_at(idx)
     }
     pub fn push_back(&mut self, node: QueueNode) {
         if let Some(ref mut head) = self.head {
