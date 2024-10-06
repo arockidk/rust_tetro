@@ -13,6 +13,7 @@ pub mod queue;
 pub mod vec2;
 #[cfg(test)]
 pub mod tests {
+    use std::collections::HashSet;
     use std::fs::File;
     use std::fs::OpenOptions;
     use std::io;
@@ -239,7 +240,9 @@ pub mod tests {
         // init_fumen = TetFumen::load(String::from("v115@9gC8wwBeAtRpC8ywBtRpE8i0RpD8BeAtg0RpA8JeAg?H"));
         // init_fumen = TetFumen::load_slice("v115@9gC8CeF8CeR8BeE8JeAgH");
         // init_fumen = TetFumen::load_slice("v115@9gC8ywF8BewwR8BeE8JeAgH");
-        init_fumen = TetFumen::load_slice("v115@9gC8FeC8GeN8AeB8BeB8JeAgH"); // Jigsaw
+        // init_fumen = TetFumen::load_slice("v115@9gC8FeC8GeN8AeB8BeB8JeAgH"); // Jigsaw
+        // init_fumen = TetFumen::load_slice("v115@9gC8DeE8EeP8CeD8JeAgH"); // BD
+        init_fumen = TetFumen::load_slice("v115@9gC8CeH8CeQ8BeD8JeAgH"); // Cavity
         let mut board = init_fumen.get_page_at(0).get_field().board.clone();
         let pos_pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| {
             mino.1 < (4 - data.lines_cleared).into()
@@ -247,12 +250,12 @@ pub mod tests {
         let mut file = OpenOptions::new().write(true).open("log.txt").unwrap();
         let mut buff = BufWriter::new(file);
         let mut fum = TetFumen::new();
-        let mut boards = Vec::new();
-        let mut queue = Queue::from_string(String::from("TJSI")).unwrap();
+        let mut boards = HashSet::new();
+        let mut queue = Queue::from_string(String::from("TSI")).unwrap();
         // queue = Queue::from_string(String::from("Z")).unwrap();
         let options = PathOptions {
-            tetfu: String::from("v115@9gC8FeC8GeN8AeB8BeB8JeAgH"),
-            patterns: String::from("TJSI"),
+            tetfu: String::from("v115@BhF8DeF8DeF8DeF8JeAgH"),
+            patterns: String::from("*p4"),
             height: 4,
             hold: true,
             max_boards: usize::MAX,

@@ -42,6 +42,7 @@ impl ClearStruct {
     }
 }
 pub struct ClearedLine(pub isize, pub Vec<PieceColor>);
+
 pub trait Board {
     fn get_tile_array(self: &Self) -> [u8; 240];
     fn get_tile_matrix(self: &Self) -> [[u8; 10]; 24];
@@ -72,7 +73,7 @@ pub trait Board {
 }
 
 #[wasm_bindgen]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct TetBoard {
     tiles: [u8; 240],
     pub height: isize,

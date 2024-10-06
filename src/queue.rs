@@ -6,7 +6,7 @@ use crate::{math::{factorial, usize_factorial}, piece::{invert_piece_vec, is_pie
 use core::fmt;
 use std::{collections::{HashMap, HashSet}, fmt::Write, io::Cursor, iter::{self, Map}, ptr};
 
-#[derive(Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 #[wasm_bindgen]
 pub enum QueueNodeType {
     Choose,
@@ -145,9 +145,16 @@ impl QueueNode {
     }
     pub fn pop_next(&mut self) -> Option<QueueNode> {
         if let Some(mut next) = self.next.clone() {
-            let mut ret = *next.clone();
-            self.next = None;
-            Some(ret)
+            if let Some(mut next_next) = next.next.clone() {
+                let mut ret = *next.clone();
+                self.next = Some(next_next);
+                ret.next = None;
+                Some(ret)
+            } else {
+                let mut ret = *next.clone();
+                self.next = None;
+                Some(ret)    
+            }
         } else {
             None
         }
@@ -159,12 +166,17 @@ impl QueueNode {
         if idx == 0 {
             return None
         }
+        if idx == 1 {
+            return self.pop_next()
+        }
         let end: bool = idx == self.len() - 1;
-        let mut node = Box::new(self.clone());
+        let mut node = self.next();
+        idx -= 1;
         while idx > 1 {
             idx -= 1;
             node = node.next();
         }
+        println!("{} {} {}", self.len(), node, end);
         if end {
             let ret_ref = node.next();
             node.next = None;
@@ -432,18 +444,17 @@ impl Queue {
     pub fn choose_count(&self) -> usize {
         let head = &self.head();
         let mut count = 0;
-        if head.next.is_some() {
-            let mut cur = head;
-            for _ in 0..self.len() {
-                if cur.node_type == QueueNodeType::Choose {
-                    count += 1;
-                }
-                if let Some(next) = &cur.next {
-                    cur = next.as_ref();
-                }
+        let mut cur = head;
+        for _ in 0..self.len() {
+            if cur.node_type == QueueNodeType::Choose {
+                count += 1;
             }
-
+            if let Some(next) = &cur.next {
+                cur = next.as_ref();
+            }
         }
+
+    
         count
     }
     pub fn pop_at(&mut self, idx: usize) -> Option<QueueNode> { 

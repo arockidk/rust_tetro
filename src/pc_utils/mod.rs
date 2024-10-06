@@ -2,7 +2,7 @@ mod u64board;
 mod placement_tree;
 use core::fmt;
 use std::any::Any;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 use placement_tree::PlacementTree;
@@ -56,7 +56,7 @@ impl Queue {
     }
 }
 pub use u64board::u64_board;
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq)]
 pub struct PiecePos(u16);
 impl PiecePos {
     pub fn set_pos(&mut self, val: Vec2) {
@@ -544,7 +544,7 @@ pub struct PathOptions {
 }
 pub fn path_entry(
     options: PathOptions,
-    output: &mut Vec<TetBoard>
+    output: &mut HashSet<TetBoard>
 ) -> i8 {
     let PathOptions {
         tetfu, 
@@ -556,7 +556,7 @@ pub fn path_entry(
     let mut fum = TetFumen::load(tetfu);
     let pattern_str_vec = patterns.split(';')
         .collect::<Vec<_>>();
-    let raw_queue_vec = pattern_str_vec.iter()
+    let raw_pattern_vec = pattern_str_vec.iter()
         .map(|s| String::from(*s))
         .map(|mut s| s.chars().filter(|c| !c.is_whitespace()).collect())
         .map(|s| Queue::from_string(s))
@@ -568,13 +568,51 @@ pub fn path_entry(
         let board = page.get_field().board.clone();
         let pieces_remaining = board.get_max_pieces(height);
         
-        for queue in &raw_queue_vec {
-            let queue_length = queue.len();
-            let mut max_depth = pieces_remaining;
-            if queue_length < pieces_remaining {
-                max_depth = queue_length;
+        for pattern in &raw_pattern_vec {
+            println!("Current pattern: {:?}", pattern.head().node_type);
+            if pattern.choose_count() > 0 {
+                for queue in pattern.possible_q_iter() {
+                    let queue_length = queue.len();
+                    let mut max_depth = pieces_remaining;
+                    if queue_length < pieces_remaining {
+                        max_depth = queue_length;
+                    }
+                    let mut placement_tree = PlacementTree::new(None); 
+                    path(
+                        board,
+                        queue.clone(), 
+                        height,
+                        hold,
+                        output, 
+                        max_boards, 
+                        0, 
+                        max_depth, 
+                        Vec::new(),
+                        &mut placement_tree
+                    );
+                }
+            } else {
+                let queue = pattern;
+                let queue_length = queue.len();
+                let mut max_depth = pieces_remaining;
+                if queue_length < pieces_remaining {
+                    max_depth = queue_length;
+                }
+                let mut placement_tree = PlacementTree::new(None); 
+                path(
+                    board,
+                    queue.clone(), 
+                    height,
+                    hold,
+                    output, 
+                    max_boards, 
+                    0, 
+                    max_depth, 
+                    Vec::new(),
+                    &mut placement_tree
+                );
             }
-            path(board, queue.clone(), height, hold, output, max_boards, 0, max_depth, Vec::new());
+            
         }
 
     }
@@ -586,13 +624,14 @@ pub fn path(
     mut queue: Queue, 
     height: usize, 
     hold: bool, 
-    end_boards: &mut Vec<TetBoard>,
+    ouptut: &mut HashSet<TetBoard>,
     max_boards: usize,
     depth: usize,
     max_depth: usize,
-    mut used: Vec<PieceColor>
+    mut used: Vec<PieceColor>,
+    placement_tree: &mut PlacementTree
 ) {
-    println!("Cur queue: {}, used: {:?}", queue, used);
+    // println!("{} Cur queue: {}, used: {:?}", "-".repeat(depth*4), queue, used);
     let pieces_remaining = board.get_max_pieces(height);
     let last = depth == max_depth - 1;
     let pred = |data: PredData| data.piece.unwrap().get_minos().iter().all(|mino: &Vec2| mino.1 < (4 - data.lines_cleared).into());
@@ -614,24 +653,28 @@ pub fn path(
                 queue.clone(), 
                 height, 
                 hold, 
-                end_boards,
+                ouptut,
                 max_boards,
                 depth + 1,
                 max_depth,
-                used.clone()
+                used.clone(),
+                placement_tree
             );
         }
         
     } else {
         for placement in placements {
             piece.set_piece_pos(placement);
-            end_boards.push(board.place_clone(piece));
+            ouptut.insert(board.place_clone(piece));
         }
     }
+    
     queue.push_front(QueueNode::cpiece(next));
     used.pop();
+    // println!("{} Pre hold branch queue: {}", "-".repeat(depth*4), queue);
     if hold && queue.len() > 1 {
         next = queue.pop_at(1).unwrap().piece();
+        // println!("{} Hold branch, new queue: {}", "-".repeat(depth*4), queue);
         piece = TetPiece::from((next, pos));
         used.push(next);
 
@@ -646,18 +689,19 @@ pub fn path(
                     queue.clone(), 
                     height, 
                     hold, 
-                    end_boards,
+                    ouptut,
                     max_boards,
                     depth + 1,
                     max_depth,
-                    used.clone()
+                    used.clone(),
+                    placement_tree
                 );
             }
             
         } else {
             for placement in placements {
                 piece.set_piece_pos(placement);
-                end_boards.push(board.place_clone(piece));
+                ouptut.insert(board.place_clone(piece));
             }
         }
     }
