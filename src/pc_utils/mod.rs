@@ -1,5 +1,6 @@
-mod u64board;
-mod placement_tree;
+pub mod bitboard;
+pub mod bitpiece;
+pub mod placement_tree;
 use core::fmt;
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
@@ -55,7 +56,7 @@ impl Queue {
         count
     }
 }
-pub use u64board::u64_board;
+pub use bitboard::BitBoard;
 #[derive(Clone, Copy, Hash, PartialEq, Eq)]
 pub struct PiecePos(u16);
 impl PiecePos {
@@ -98,12 +99,12 @@ impl From<TetPiece> for PiecePos {
         let (mut x, mut y, mut rot) = (0, 0, 0);
         x = value.position.0 & 0b1111;
         y = value.position.1 & 0b11111;
-        rot = value.rotation.to_i32() & 0b11;
+        rot = value.rotation as u8 & 0b11;
         //println!("x: {}, y: {}, rot: {}", x, y, rot);
         x <<= 7;
         y <<= 2;
         let mut ret = PiecePos(
-            (x | y | rot).try_into().unwrap(),
+            (x | y | rot as i32).try_into().unwrap(),
         );
         ret
     }
@@ -115,7 +116,7 @@ impl Into<Vec2> for PiecePos {
 }
 impl Into<Direction> for PiecePos {
     fn into(self) -> Direction {
-        Direction::from_int((self.0 & 0b11).into())
+        Direction::from((self.0 & 0b11) as u8)
     }
 }
 pub struct PieceNode {
@@ -124,14 +125,11 @@ pub struct PieceNode {
 
 }
 
-impl u64_board {
+impl BitBoard {
     pub fn get_piece_placements(&mut self, mut piece: TetPiece, height: u8) -> Vec<PiecePos> {
         let mut placements = Vec::new();
         piece.position.1 = (height) as i32;
         piece.position.0 = 1;
-        self.das_piece(&mut piece, Direction::South, 1000);
-        println!("{}", Field::new(self.as_board(), Some(piece), None));
-
         placements
 
     }
@@ -396,7 +394,7 @@ impl TetBoard {
         piece.set_piece_pos(start_pos);
         while self.does_collide(piece) {
 
-            if piece.rotation.to_i8() + 1 > 3 {
+            if piece.rotation as u8 + 1 > 3 {
                 piece.rotation = Direction::North;
                 piece.position.0 += 1;
                 if piece.position.0 > 9 {
@@ -447,7 +445,7 @@ impl TetBoard {
         let mut start_pos = PiecePos::from(piece);
         piece.set_piece_pos(start_pos);
         while self.does_collide(piece) {
-            if piece.rotation.to_i8() + 1 > 3 {
+            if piece.rotation as u8 + 1 > 3 {
                 piece.rotation = Direction::North;
                 piece.position.0 += 1;
                 if piece.position.0 > 9 {
