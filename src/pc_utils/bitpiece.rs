@@ -1,7 +1,6 @@
 
 use std::ops::Sub;
 
-use libdivide::Divider;
 
 use crate::{piece::{Direction, PieceColor}, vec2::Vec2};
 // bits 1-2: rotation
