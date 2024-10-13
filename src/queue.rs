@@ -32,9 +32,9 @@ impl QueueNode {
     ) -> QueueNode {
         Self::new(
             node_type,
-            serde_wasm_bindgen::from_value(choose).unwrap(),
-            serde_wasm_bindgen::from_value(piece).unwrap(),
-            serde_wasm_bindgen::from_value(next).unwrap()
+            serde_wasm_bindgen::from_value(choose).unwrap_or(None),
+            serde_wasm_bindgen::from_value(piece).unwrap_or(None),
+            serde_wasm_bindgen::from_value(next).unwrap_or(None)
         )
     }
     
