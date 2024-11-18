@@ -12,6 +12,7 @@ use std::{fmt::{format, Write}, ops::{Add, Sub}};
 use crate::{colors::{get_blank, get_piece_color}, vec2::Vec2};
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, serde::Serialize, serde::Deserialize, PartialOrd, Ord)]
+#[repr(u8)]
 #[wasm_bindgen]
 pub enum PieceColor {
     B=0,
@@ -23,6 +24,63 @@ pub enum PieceColor {
     J=6,
     S=7,
     G=8
+}
+pub static PIECE_COLORS: [PieceColor; 7] = [
+    PieceColor::I,
+    PieceColor::L,
+    PieceColor::O,
+    PieceColor::Z,
+    PieceColor::T,
+    PieceColor::J,
+    PieceColor::S
+];
+impl From<u64> for PieceColor {
+    fn from(i: u64) -> Self {
+        match i {
+            0 => PieceColor::B,
+            1 => PieceColor::I,
+            2 => PieceColor::L,
+            3 => PieceColor::O,
+            4 => PieceColor::Z,
+            5 => PieceColor::T,
+            6 => PieceColor::J,
+            7 => PieceColor::S,
+            8 => PieceColor::G,
+            _ => PieceColor::B
+        }
+    }
+}
+impl From<u32> for PieceColor {
+    fn from(i: u32) -> Self {
+        match i {
+            0 => PieceColor::B,
+            1 => PieceColor::I,
+            2 => PieceColor::L,
+            3 => PieceColor::O,
+            4 => PieceColor::Z,
+            5 => PieceColor::T,
+            6 => PieceColor::J,
+            7 => PieceColor::S,
+            8 => PieceColor::G,
+            _ => PieceColor::B
+        }
+    }
+}
+impl From<u8> for PieceColor {
+    fn from(i: u8) -> Self {
+        match i {
+            0 => PieceColor::B,
+            1 => PieceColor::I,
+            2 => PieceColor::L,
+            3 => PieceColor::O,
+            4 => PieceColor::Z,
+            5 => PieceColor::T,
+            6 => PieceColor::J,
+            7 => PieceColor::S,
+            8 => PieceColor::G,
+            _ => PieceColor::B
+        }
+    }
 }
 static PIECES: [PieceColor; 7] = [
     PieceColor::I,
@@ -46,21 +104,6 @@ pub fn is_piece_color(c: char) -> bool {
     c == 'I' || c == 'L' || c == 'O' || c == 'Z' || c == 'T' || c == 'J' || c == 'S'
 }
 
-#[wasm_bindgen(js_name = "pieceColorFromInt")]
-pub fn piece_color_from_int(int: u8) -> PieceColor {
-    match int {
-        0 => PieceColor::B,
-        1 => PieceColor::I,
-        2 => PieceColor::L,
-        3 => PieceColor::O,
-        4 => PieceColor::Z,
-        5 => PieceColor::T,
-        6 => PieceColor::J,
-        7 => PieceColor::S,
-        8 => PieceColor::G,
-        _ => PieceColor::T
-    }
-}
 #[wasm_bindgen(js_name = "pieceColorFromStr")]
 pub fn piece_color_from_str(str: &str) -> PieceColor {
     match str {
@@ -122,70 +165,16 @@ pub fn piece_color_from_char(c: char) -> PieceColor {
 }
 #[wasm_bindgen]
 #[derive(PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize, Debug)]
+#[repr(u8)]
 pub enum Direction {
     North = 0,
     East = 1,
     South = 2,
     West = 3
 }
-impl AddAssign<i32> for Direction {
-    fn add_assign(&mut self, rhs: i32) {
-        *self = Self::from_int(self.to_i64() + rhs as i64);
-
-    }
-}
-
-#[wasm_bindgen]
-
-pub fn direction_to_i8(dir: Direction) -> i8 {
-    match dir {
-        Direction::North => 0,
-        Direction::East => 1,
-        Direction::South => 2,
-        Direction::West => 3
-    }
-}
-#[wasm_bindgen]
-pub fn direction_to_i32(dir: Direction) -> i32 {
-    direction_to_i8(dir) as i32        
-}
-#[wasm_bindgen]
-pub fn direction_to_i64(dir: Direction) -> i64 {
-    direction_to_i8(dir) as i64        
-}
-impl Direction {
-    pub fn to_i8(&self) -> i8 {
-        direction_to_i8(*self)
-    }
-    pub fn to_i32(&self) -> i32 {
-        direction_to_i32(*self)
-    }
-    pub fn to_i64(&self) -> i64 {
-        direction_to_i64(*self)
-    }
-}
-
-impl Sub for Direction { 
-    type Output = i64;
-    fn sub(self, rhs: Self) -> Self::Output {
-        self.to_i64() - rhs.to_i64()
-    }
-}
-impl Add for Direction { 
-    type Output = i64;
-    fn add(self, rhs: Self) -> Self::Output {
-        self.to_i64() + rhs.to_i64()
-    }
-}
-impl Add<i64> for Direction { 
-    type Output = i64;
-    fn add(self, rhs: i64) -> Self::Output {
-        self.to_i64() + rhs
-    }
-}
-impl Direction {
-    pub fn from_int(int: i64) -> Direction {
-        match int {
+impl From<u8> for Direction {
+    fn from(i: u8) -> Self {
+        match i {
             0 => Direction::North,
             1 => Direction::East,
             2 => Direction::South,
@@ -194,9 +183,22 @@ impl Direction {
         }
     }
 }
-
-
-
+impl AddAssign for Direction {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Self::from((*self as u8 + rhs as u8) % 4);
+    }
+}
+impl AddAssign<u8> for Direction {
+    fn add_assign(&mut self, rhs: u8) {
+        *self = Self::from((*self as u8 + rhs) % 4);
+    }
+}
+pub static DIRECTIONS: [Direction; 4] = [
+    Direction::North,
+    Direction::East,
+    Direction::South,
+    Direction::West
+];
 static BLOCKS: [PieceMinos; 7] = [
     // I
     [

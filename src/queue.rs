@@ -176,7 +176,7 @@ impl QueueNode {
             idx -= 1;
             node = node.next();
         }
-        println!("{} {} {}", self.len(), node, end);
+        // println!("{} {} {}", self.len(), node, end);
         if end {
             let ret_ref = node.next();
             node.next = None;

@@ -2,7 +2,7 @@
 use std::{clone, default, fmt::{self, format, Write}};
 
 use wasm_bindgen::prelude::*;
-use crate::{board::{Board, ClearStruct, TSpinResult, TetBoard}, piece::{self, color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
+use crate::{board::{Board, ClearStruct, TSpinResult, TetBoard}, piece::{self, color_str, piece_color_to_char, Direction, PieceColor, PieceMinos, TetPiece}, vec2::Vec2};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug)]
@@ -168,12 +168,7 @@ impl fmt::Display for Field {
                     }
                     None => ()
                 }
-
-
-
-                
-                let tile_color = piece_color_from_int(tile);
-                
+                let tile_color = PieceColor::from(tile);
                 if tile == 8 {
                     f.write_str("X");
                 } else {

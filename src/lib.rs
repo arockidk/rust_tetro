@@ -14,6 +14,7 @@ pub mod vec2;
 #[cfg(test)]
 pub mod tests {
     use std::collections::HashSet;
+    use std::collections::LinkedList;
     use std::fs::File;
     use std::fs::OpenOptions;
     use std::io;
@@ -30,6 +31,15 @@ pub mod tests {
     use crate::field;
     use crate::field::Field;
     use crate::fumen::TetFumen;
+    use crate::pc_utils::bitboard::fast_path;
+    use crate::pc_utils::bitboard::find_placements;
+    use crate::pc_utils::bitboard::BitBoard;
+    use crate::pc_utils::bitboard::Placements;
+    use crate::pc_utils::bitpiece;
+    use crate::pc_utils::bitpiece::BitPiece;
+    use crate::pc_utils::bitpiece::BOUND_MAPS;
+    use crate::pc_utils::bitpiece::MINOS;
+    use crate::pc_utils::bitqueue::BitQueue;
     use crate::pc_utils::path;
     use crate::pc_utils::path_entry;
     use crate::pc_utils::PathOptions;
@@ -40,6 +50,8 @@ pub mod tests {
     use crate::piece::Direction;
     use crate::piece::PieceColor;
     use crate::piece::TetPiece;
+    use crate::piece::DIRECTIONS;
+    use crate::piece::PIECE_COLORS;
     use crate::queue;
     use crate::queue::Choose;
     use crate::queue::Queue;
@@ -402,12 +414,102 @@ pub mod tests {
     }
     fn cleared_test() {
         let mut board = TetFumen::load(String::from("v115@9gD8FeC8GeN8AeB8BeA8JeAgH")).get_page_at(0).get_field().board.clone();
-        let mut t = TetPiece::t();
-        t.position = Vec2(4,1);
-        t.rotation = Direction::West;
+            let mut t = TetPiece::t();
+            t.position = Vec2(4,1);
+            t.rotation = Direction::West;
         println!("{}", t);
         board.place(t);
         println!("{}", board.quick_fumen_encode());
+    }
+    fn p_test() {
+        let mut file = OpenOptions::new().write(true).open("log.txt").unwrap();
+        let mut buff = BufWriter::new(file);
+        // let mut bb = BitBoard::from(TetBoard::load_fumen("v115@9gC8CeH8CeQ8BeD8JeAgH"));
+        // println!("{}", bb);
+        // for color in PIECE_COLORS {
+        //     println!("//  {:?}", color);
+        //     println!("    [");
+        //     for direction in DIRECTIONS {
+        //         let mut bit_piece = BitPiece::new(0, direction, color);
+        //         let repr = bit_piece.bit_repr();
+        //         let mut base_map = !(0 as u64); 
+        //         let mut bound_map = 0 as u64;
+        //         let mut wall_map = 0 as u64;
+        //         while base_map.trailing_zeros() < 60 {
+        //             bit_piece.0 = base_map.trailing_zeros() as usize; 
+        //             base_map &= base_map - 1;
+        //             wall_map |= ((!bit_piece.wall_overlap()) as u64) << bit_piece.0;
+        //             bound_map |= (bit_piece.in_bounds() as u64) << bit_piece.0;
+        //         }
+        //         println!("        (\n            {:#066b},\n            {:#066b}\n        ),", bound_map, wall_map);
+    
+        //     }
+        //     println!("    ],");
+        // }
+        // let mut bb = BitBoard(
+        //     0b0011111100_0011111100_0011111100_0001111000
+        // );
+        // let mut bp = BitPiece::new(
+        //     0, 
+        //     Direction::East, 
+        //     PieceColor::T
+        // );
+        // let collision_maps = bb.gen_collision_maps(bp.2);
+
+        // let mut placements = Placements::new(collision_maps);
+        // let mut placements1 = placements.clone();
+        // for a in collision_maps.iter() {
+        //     // println!("{:#066b}", *a);
+        //     println!("{}", BitBoard(*a));
+        // }
+        // placements.gen_all();   
+        // for placment in placements.0.iter() {
+        //     buff.write_all(format!("{}\n", BitBoard(*placment)).as_bytes());
+        // } 
+        
+    
+        // let cmap = bb.gen_collision_map(bp);
+        // println!("{:#066b}", cmap);
+        // println!("{}", BitBoard(cmap));
+        // println!("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        // println!("{}", BitBoard(placements.1[1]));
+        // placements.cw();
+        
+        // println!("{}", BitBoard(placements.0[0]));
+        // let mut t_bp = BitPiece::new(
+        //     0,
+        //     Direction::West,
+        //     PieceColor::T
+        // );
+        // let cmap = t_bb.gen_collision_map(t_bp);
+        // println!("{}", BitBoard(cmap));
+        // let lines = t_bb.clear();
+        // println!("{:?}\n{}", lines, t_bb);
+        // t_bb.unclear(lines);
+        // println!("{}", t_bb);
+        let mut sol_set: HashSet<BitBoard> = HashSet::new();
+        let mut fum = TetFumen::new();
+        // let jigsaw = TetBoard::load_fumen("v115@9gC8FeC8GeN8AeB8BeB8JeAgH");
+        let mut bd = TetBoard::load_fumen("v115@9gC8DeE8EeP8CeD8JeAgH");
+
+        let mut bb = BitBoard::from(bd);
+        let q = BitQueue::from("TZJ");
+        let mut output: HashSet<BitBoard> = HashSet::new();
+        fast_path(
+            bb,
+            q,
+            false,
+            &mut output,
+            0,
+        2
+        );
+        println!("----");
+
+        for board in output.iter() {
+            println!("{}", board);
+        }
+
+
     }
     #[test]
     fn test() {
@@ -442,6 +544,8 @@ pub mod tests {
                     line_test();
                 } else if input == "cleared" {
                     cleared_test();
+                } else if input == "p" {
+                    p_test();
                 }
             }
             Err(error) => println!("error reading input: {error}"),

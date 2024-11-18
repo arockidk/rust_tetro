@@ -1,5 +1,6 @@
 pub mod bitboard;
 pub mod bitpiece;
+pub mod bitqueue;
 pub mod placement_tree;
 use core::fmt;
 use std::any::Any;
@@ -383,7 +384,7 @@ impl TetBoard {
             ret = self.get_piece_placements_pred(piece, &mut pred_data, pred.unwrap());
         }
         cleared.reverse();
-        self.refill_rows(cleared);
+        self.refill_rows(&cleared);
         ret
     }
     fn get_piece_placements0(&mut self, mut piece: TetPiece) -> Vec<PiecePos> {
@@ -567,7 +568,7 @@ pub fn path_entry(
         let pieces_remaining = board.get_max_pieces(height);
         
         for pattern in &raw_pattern_vec {
-            println!("Current pattern: {:?}", pattern.head().node_type);
+            // println!("Current pattern: {:?}", pattern.head().node_type);
             if pattern.choose_count() > 0 {
                 for queue in pattern.possible_q_iter() {
                     let queue_length = queue.len();

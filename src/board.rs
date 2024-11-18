@@ -1,7 +1,8 @@
 use crate::colors::get_piece_color;
 use crate::field;
+use crate::fumen::TetFumen;
 use crate::kicks::get_kicks;
-use crate::piece::{color_str, piece_color_from_int, piece_color_to_char, Direction, PieceColor};
+use crate::piece::{color_str, piece_color_to_char, Direction, PieceColor};
 use crate::vec2::Vec2;
 use crate::{kicks::get_180_kicks, piece::TetPiece};
 use fumen::Piece;
@@ -41,6 +42,7 @@ impl ClearStruct {
         self.1.clone()
     }
 }
+#[derive(Debug)]
 pub struct ClearedLine(pub isize, pub Vec<PieceColor>);
 
 pub trait Board {
@@ -67,7 +69,7 @@ pub trait Board {
     fn unplace(&mut self, piece: TetPiece) -> bool;
     fn check_pc(&self) -> bool;
     fn check_t_spin(&self, piece: TetPiece) -> TSpinResult;
-    fn refill_rows(&mut self, rows: Vec<ClearedLine>);
+    fn refill_rows(&mut self, rows: &Vec<ClearedLine>);
     fn place_clone(&self, piece: TetPiece) -> Self;
     fn to_gray(&mut self);
 }
@@ -195,8 +197,8 @@ impl Board for TetBoard {
         let mut test_piece = piece.clone();
         let mod_rot = rotation % 4;
         let old_rot: usize = piece.rotation as usize;
-        let new_rot = (piece.rotation + mod_rot as i64) % 4;
-        test_piece.rotation = Direction::from_int(new_rot.into());
+        let new_rot = (piece.rotation as u8 + mod_rot) % 4;
+        test_piece.rotation = Direction::from(new_rot);
         if (piece.color() == PieceColor::O) {
             piece.rotation = test_piece.rotation;
             return true;
@@ -341,7 +343,7 @@ impl Board for TetBoard {
 
         }
         if (!self.can_place(piece)) {
-            self.refill_rows(rows);
+            self.refill_rows(&rows);
             return false;
         }
         for mino in piece.get_minos() {
@@ -352,7 +354,7 @@ impl Board for TetBoard {
             );
         }
         rows.reverse();
-        self.refill_rows(rows);
+        self.refill_rows(&rows);
         true
     }
     fn unplace(&mut self, piece: TetPiece) -> bool {
@@ -365,7 +367,7 @@ impl Board for TetBoard {
         for mino in piece.get_minos() {
             self.clear_tile(mino.0.try_into().unwrap(), mino.1.try_into().unwrap());
         }
-        self.refill_rows(rows);
+        self.refill_rows(&rows);
         true
     }
     fn place_n_clear(&mut self, piece: TetPiece) -> ClearStruct {
@@ -468,7 +470,7 @@ impl Board for TetBoard {
         let conv = row as usize;
         let mut ret = Vec::with_capacity(self.width.try_into().unwrap());
         for j in 0..self.width {
-            ret.push(piece_color_from_int(self.get_tile(j, row)));
+            ret.push(PieceColor::from(self.get_tile(j, row)));
         }
         if row < self.height {
             for i in row..23 {
@@ -482,7 +484,7 @@ impl Board for TetBoard {
         ClearedLine(row, ret)
     }
     
-    fn refill_rows(&mut self, rows: Vec<ClearedLine>) {
+    fn refill_rows(&mut self, rows: &Vec<ClearedLine>) {
         for line in rows {
             let row = line.0;
             if row < self.height {
@@ -645,7 +647,7 @@ impl TetBoard {
         for i in 0..self.height {
             for j in 0..self.width {
                 let tile = self.tiles[((self.height - i - 1) * self.width + j) as usize];
-                let tile_color = piece_color_from_int(tile);
+                let tile_color = PieceColor::from(tile);
                 if tile == 8 {
                     base.write_str("X");
                 } else {
@@ -656,6 +658,10 @@ impl TetBoard {
         }
         base
     }
+    #[wasm_bindgen(js_name = loadFumen)]
+    pub fn load_fumen(fumen: &str) -> Self {
+        TetFumen::load(String::from(fumen)).get_page_at(0).field().board
+    }
 }
 
 impl Display for TetBoard {
@@ -663,7 +669,7 @@ impl Display for TetBoard {
         for i in 0..self.height {
             for j in 0..self.width {
                 let tile = self.tiles[((self.height - i - 1) * self.width + j) as usize];
-                let tile_color = piece_color_from_int(tile);
+                let tile_color = PieceColor::from(tile);
                 if tile == 8 {
                     f.write_str("X");
                 } else {

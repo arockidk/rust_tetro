@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-use rust_tetro::{board::Board, field::Field, fumen::TetFumen, pc_utils::{path_entry, PathOptions, PredData}, piece::{piece_color_from_char, piece_color_from_str, piece_color_to_char, TetPiece}, queue::Queue, vec2::Vec2};
-use getargs::{self, Arg, Opt, Options};
+use rust_tetro::{board::Board, field::Field, fumen::TetFumen, pc_utils::{path_entry, PathOptions, PredData}, piece::{piece_color_from_str, piece_color_to_char, TetPiece}, vec2::Vec2};
+use getargs::{self, Arg , Options};
 // v115@9gC8FeC8GeE8EeD8FeA8JeAgH
 fn main() {
     let mut args = std::env::args().skip(1) .collect::<Vec<_>>();
@@ -98,16 +98,16 @@ fn main() {
                 for placement in placements {
                     tetp.set_piece_pos(placement);
                     let placed = board.place_clone(tetp);
-                    let mut pg = place_fum.add_page_rs();
+                    let pg = place_fum.add_page_rs();
                     pg.set_field(Field::from_board(placed));
                 }
                 println!("Placements fumen: {}", place_fum.encode_fumen());
             }
         },
         "path" => {
-            let fum = TetFumen::load_slice(fum_string);
+            // let fum = TetFumen::load_slice(fum_string);
             
-            for i in 0..fum.len() {
+            // for i in 0..fum.len() {
                 println!("Searching patterns: {}", patterns);
                 let mut output = HashSet::new();
                 let options = PathOptions {
@@ -125,7 +125,7 @@ fn main() {
                     pg.set_field(Field::from_board(board));
                 }
                 println!("Result: {}", result.encode_fumen());
-            }
+            // }
         }
         _ => {}
     }

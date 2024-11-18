@@ -357,11 +357,11 @@ impl TetFumen {
 
     #[wasm_bindgen(js_name = "decodeFumen")]
     pub fn decode_fumen(&mut self, fumen: String) {
-        println!("{}", fumen);
+        // println!("{}", fumen);
         let mut new_pagee = fumen::Fumen::decode(fumen.as_str());
         if new_pagee.is_err() {
             let err = new_pagee.clone().err().unwrap();
-            eprintln!("{:?}", err);
+            // eprintln!("{:?}", err);
             return
         }
         let new_page = new_pagee.unwrap();
@@ -378,7 +378,17 @@ impl TetFumen {
     pub fn js_get_page_at(&self, idx: usize) -> TetPage {
         self.pages[idx].clone()
     }
-
+    #[wasm_bindgen(js_name = "appendBoard")]
+    pub fn append_board(&mut self, board: TetBoard) {
+        let pg = self.add_page_rs();
+        pg.set_field(Field::new(board, None, None));
+    }
+    pub fn append(&mut self, other: TetFumen) {
+        for page in other.pages.iter() {
+            self.pages.push(page.clone());
+        }
+        
+    }
 }
 impl TetFumen {
     pub fn add_page_rs(&mut self) -> &mut TetPage {

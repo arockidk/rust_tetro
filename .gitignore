@@ -5,3 +5,5 @@ pkg/
 relpit.nix
 Cargo.lock
 .cargo/
+*.py
+*.txt
