@@ -91,6 +91,22 @@ static PIECES: [PieceColor; 7] = [
     PieceColor::J,
     PieceColor::S
 ];
+impl From<u8> for PieceColor {
+    fn from(c: u8) -> Self {
+        match c {
+            0 => PieceColor::B,
+            1 => PieceColor::I,
+            2 => PieceColor::L,
+            3 => PieceColor::O,
+            4 => PieceColor::Z,
+            5 => PieceColor::T,
+            6 => PieceColor::J,
+            7 => PieceColor::S,
+            _ => PieceColor::T
+        }
+    }
+}
+
 pub fn invert_piece_vec(vec: Vec<PieceColor>) -> Vec<PieceColor> {
     let mut ret = Vec::new();
     for piece in PIECES {
@@ -175,6 +191,17 @@ pub enum Direction {
 impl From<u8> for Direction {
     fn from(i: u8) -> Self {
         match i {
+            0 => Direction::North,
+            1 => Direction::East,
+            2 => Direction::South,
+            3 => Direction::West,
+            _ => Direction::North
+        }
+    }
+}
+impl From<u8> for Direction {
+    fn from(int: u8) -> Self {
+        match int {
             0 => Direction::North,
             1 => Direction::East,
             2 => Direction::South,
